@@ -117,7 +117,7 @@ class SAX_FAST(BaseTransformer):
         if self.word_length < 1 or self.word_length > 16:
             raise RuntimeError("Word length must be an integer between 1 and 16")
 
-        breakpoints = SAX_FAST._generate_breakpoints()
+        breakpoints = self._generate_breakpoints()
         n_instances, series_length = X.shape
 
         num_windows_per_inst = series_length - self.window_size + 1
@@ -217,7 +217,6 @@ class SAX_FAST(BaseTransformer):
 
         return word
 
-    @staticmethod
     def _generate_breakpoints(self):
         # Pre-made gaussian curve breakpoints from UEA TSC codebase
         return np.array(
