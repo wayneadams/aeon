@@ -127,7 +127,7 @@ class WEASEL_DILATION(BaseClassifier):
         n_jobs=4,
     ):
         self.alphabet_sizes = [2]
-        self.binning_strategies = (["equi-depth", "equi-width"],)
+        self.binning_strategies = ["equi-depth", "equi-width"]
 
         self.anova = False
         self.variance = True
