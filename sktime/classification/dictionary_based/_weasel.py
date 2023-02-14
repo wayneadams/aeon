@@ -8,7 +8,6 @@ __author__ = ["patrickzib", "Arik Ermshaus"]
 __all__ = ["WEASEL"]
 
 import math
-import warnings
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -71,18 +70,14 @@ class WEASEL(BaseClassifier):
         should not be performed.
     alphabet_size : default = 4
         Number of possible letters (values) for each word.
-
-        .. deprecated:: 0.13.3
-            the default = 4 was deprecated in version 0.13.3 and will be changed to
-            default = 2 in 0.15. Please use alphabet_size=2 due to its lower memory
-            footprint, better runtime at equal accuracy.
-
     feature_selection: {"chi2", "none", "random"}, default: chi2
-        Sets the feature selections strategy to be used. *Chi2* reduces the number
-        of words significantly and is thus much faster (preferred). If set to chi2,
-         p_threshold is applied.  *Random* also reduces the number significantly.
-         *None* applies not feature selectiona and yields large bag of words,
-         e.g. much memory may be needed.
+        Sets the feature selections strategy to be used. Large amounts of memory may be
+        needed depending on the setting of bigrams (true is more) or
+        alpha (larger is more).
+        'chi2' reduces the number of words, keeping those above the 'p_threshold'.
+        'random' reduces the number to at most 'max_feature_count',
+        by randomly selecting features.
+        'none' does not apply any feature selection and yields large bag of words
     support_probabilities: bool, default: False
         If set to False, a RidgeClassifierCV will be trained, which has higher accuracy
         and is faster, yet does not support predict_proba.
@@ -141,7 +136,7 @@ class WEASEL(BaseClassifier):
         binning_strategy="information-gain",
         window_inc=2,
         p_threshold=0.05,
-        alphabet_size=4,  # TODO set default alphabet_size=2 in v0.15
+        alphabet_size=4,
         n_jobs=1,
         feature_selection="chi2",
         support_probabilities=False,
@@ -199,14 +194,6 @@ class WEASEL(BaseClassifier):
         """
         # Window length parameter space dependent on series length
         self.n_instances, self.series_length = X.shape[0], X.shape[-1]
-
-        if self.alphabet_size == 4:
-            warnings.warn(
-                "``alphabet_size=4`` was deprecated in version 0.13.3 and "
-                "will be changed to ``alphabet_size=2`` in 0.15."
-                "Please use alphabet_size=2 due to its lower memory "
-                "footprint, better runtime at equal accuracy."
-            )
 
         win_inc = self._compute_window_inc()
         self.max_window = int(min(self.series_length, self.max_window))
