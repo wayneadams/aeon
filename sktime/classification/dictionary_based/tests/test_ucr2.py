@@ -33,7 +33,7 @@ from sktime.classification.dictionary_based import (
     WEASEL_DILATION,
     BOSSEnsemble,
     ContractableBOSS,
-    TemporalDictionaryEnsemble,
+    FastTemporalDictionaryEnsemble,
 )
 from sktime.classification.hybrid._hivecote_v2 import HIVECOTEV2
 
@@ -245,19 +245,22 @@ def get_classifiers(threads_to_use):
         # "BOSS": BOSSEnsemble(random_state=1379, n_jobs=threads_to_use),
         # "cBOSS": ContractableBOSS(random_state=1379, n_jobs=threads_to_use),
         # "TDE": TemporalDictionaryEnsemble(random_state=1379, n_jobs=threads_to_use),
-        "MultiRocket": make_pipeline(
-            MultiRocket(random_state=1379, n_jobs=threads_to_use),
-            RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
+        "TDE_Fast": FastTemporalDictionaryEnsemble(
+            random_state=1379, n_jobs=threads_to_use
         ),
-        # "R_DST": R_DST_Ridge(random_state=1379),
-        "Rocket": make_pipeline(
-            Rocket(random_state=1379, n_jobs=threads_to_use),
-            RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
-        ),
-        "MiniRocket": make_pipeline(
-            MiniRocket(random_state=1379, n_jobs=threads_to_use),
-            RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
-        ),
+        # "MultiRocket": make_pipeline(
+        #     MultiRocket(random_state=1379, n_jobs=threads_to_use),
+        #     RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
+        # ),
+        # # "R_DST": R_DST_Ridge(random_state=1379),
+        # "Rocket": make_pipeline(
+        #     Rocket(random_state=1379, n_jobs=threads_to_use),
+        #     RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
+        # ),
+        # "MiniRocket": make_pipeline(
+        #     MiniRocket(random_state=1379, n_jobs=threads_to_use),
+        #     RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
+        # ),
     }
     return clfs
 
@@ -295,8 +298,11 @@ if __name__ == "__main__":
             os.path.join(DATA_PATH, dataset_name, dataset_name + "_TEST.tsv")
         )
 
-        X_train = np.reshape(np.array(X_train), (len(X_train), 1, -1))
-        X_test = np.reshape(np.array(X_test), (len(X_test), 1, -1))
+        # X_train = np.reshape(np.array(X_train), (len(X_train), 1, -1))
+        # X_test = np.reshape(np.array(X_test), (len(X_test), 1, -1))
+
+        X_train = np.reshape(np.array(X_train), (len(X_train), -1))
+        X_test = np.reshape(np.array(X_test), (len(X_test), -1))
 
         # X_train = zscore(X_train, axis=-1)
         # X_test = zscore(X_test, axis=-1)

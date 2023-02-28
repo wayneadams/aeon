@@ -4,6 +4,7 @@ __all__ = [
     "IndividualBOSS",
     "BOSSEnsemble",
     "ContractableBOSS",
+    "FastTemporalDictionaryEnsemble",
     "TemporalDictionaryEnsemble",
     "IndividualTDE",
     "HYDRA",
@@ -23,6 +24,9 @@ from sktime.classification.dictionary_based._muse_dilation import MUSE_DILATION
 from sktime.classification.dictionary_based._tde import (
     IndividualTDE,
     TemporalDictionaryEnsemble,
+)
+from sktime.classification.dictionary_based._tde_fast import (
+    FastTemporalDictionaryEnsemble,
 )
 from sktime.classification.dictionary_based._weasel import WEASEL
 from sktime.classification.dictionary_based._weasel_dilation import WEASEL_DILATION

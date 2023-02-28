@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """WEASEL test code."""
+# import time
+
 from sktime.classification.dictionary_based._weasel import WEASEL
 from sktime.datasets import load_gunpoint
 

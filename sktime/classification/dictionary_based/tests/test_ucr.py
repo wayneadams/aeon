@@ -34,6 +34,7 @@ from sktime.classification.dictionary_based import (
     WEASEL_DILATION,
     BOSSEnsemble,
     ContractableBOSS,
+    FastTemporalDictionaryEnsemble,
     TemporalDictionaryEnsemble,
 )
 from sktime.classification.hybrid._hivecote_v2 import HIVECOTEV2
@@ -202,12 +203,12 @@ dataset_names_excerpt = [
     # # "SmoothSubspace",
     # # "Worms",
     # # "WormsTwoClass",
-    "ArrowHead",
-    "Beef",
-    "BeetleFly",
-    "BirdChicken",
-    "Car",
-    "CBF",
+    # "ArrowHead",
+    # "Beef",
+    # "BeetleFly",
+    # "BirdChicken",
+    # "Car",
+    # "CBF",
     "Coffee",
     "DiatomSizeReduction",
     "DistalPhalanxOutlineAgeGroup",
@@ -240,11 +241,11 @@ def get_classifiers(threads_to_use):
     """Obtain the benchmark classifiers."""
     clfs = {
         # MrSQMClassifier()
-        "HC 2.0": HIVECOTEV2(
-            random_state=1379,
-            # time_limit_in_minutes=1,
-            n_jobs=threads_to_use,
-        )
+        # "HC 2.0": HIVECOTEV2(
+        #     random_state=1379,
+        #     # time_limit_in_minutes=1,
+        #     n_jobs=threads_to_use,
+        # )
         # "Hydra": HYDRA(),
         # "MPDist": MPDist()
         # "WEASEL (dilated;7-8)": WEASEL_DILATION(
@@ -295,7 +296,10 @@ def get_classifiers(threads_to_use):
         # "WEASEL": WEASEL(random_state=1379, n_jobs=threads_to_use),
         # "BOSS": BOSSEnsemble(random_state=1379, n_jobs=threads_to_use),
         # "cBOSS": ContractableBOSS(random_state=1379, n_jobs=threads_to_use),
-        # "TDE": TemporalDictionaryEnsemble(random_state=1379, n_jobs=threads_to_use),
+        "TDE": TemporalDictionaryEnsemble(random_state=1379, n_jobs=threads_to_use),
+        "TDE_FAST": FastTemporalDictionaryEnsemble(
+            random_state=1379, n_jobs=threads_to_use
+        ),
         # "MultiRocket": make_pipeline(
         #    MultiRocket(random_state=1379, n_jobs=threads_to_use),
         #    RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True),
