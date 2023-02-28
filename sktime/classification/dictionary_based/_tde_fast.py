@@ -912,4 +912,5 @@ def _histogram_intersection_dict(first, second):
 
 def hist_intersection(X, Y):
     """Compute Histogram Intersection for two scipy csr_matrix."""
-    return np.sum(X.minimum(Y)) + np.sum(X[:, Y.nonzero()[1]])
+    mask = Y.nonzero()[-1]
+    return np.sum(X[:, mask].minimum(Y)) + np.sum(X[:, mask])

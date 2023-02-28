@@ -211,29 +211,29 @@ dataset_names_excerpt = [
     # "CBF",
     "Coffee",
     "DiatomSizeReduction",
-    "DistalPhalanxOutlineAgeGroup",
-    "DistalPhalanxOutlineCorrect",
-    "DistalPhalanxTW",
-    "ECG200",
-    "ECGFiveDays",
-    "FaceAll",
-    "FaceFour",
-    "FacesUCR",
-    "GunPoint",
-    "ItalyPowerDemand",
-    "MiddlePhalanxOutlineAgeGroup",
-    "MiddlePhalanxOutlineCorrect",
-    "MiddlePhalanxTW",
-    "OliveOil",
-    "Plane",
-    "ProximalPhalanxOutlineAgeGroup",
-    "ProximalPhalanxOutlineCorrect",
-    "ProximalPhalanxTW",
-    "SonyAIBORobotSurface1",
-    "SonyAIBORobotSurface2",
-    "SyntheticControl",
-    "TwoLeadECG",
-    "Wine",
+    # "DistalPhalanxOutlineAgeGroup",
+    # "DistalPhalanxOutlineCorrect",
+    # "DistalPhalanxTW",
+    # "ECG200",
+    # "ECGFiveDays",
+    # "FaceAll",
+    # "FaceFour",
+    # "FacesUCR",
+    # "GunPoint",
+    # "ItalyPowerDemand",
+    # "MiddlePhalanxOutlineAgeGroup",
+    # "MiddlePhalanxOutlineCorrect",
+    # "MiddlePhalanxTW",
+    # "OliveOil",
+    # "Plane",
+    # "ProximalPhalanxOutlineAgeGroup",
+    # "ProximalPhalanxOutlineCorrect",
+    # "ProximalPhalanxTW",
+    # "SonyAIBORobotSurface1",
+    # "SonyAIBORobotSurface2",
+    # "SyntheticControl",
+    # "TwoLeadECG",
+    # "Wine",
 ]
 
 
@@ -296,7 +296,7 @@ def get_classifiers(threads_to_use):
         # "WEASEL": WEASEL(random_state=1379, n_jobs=threads_to_use),
         # "BOSS": BOSSEnsemble(random_state=1379, n_jobs=threads_to_use),
         # "cBOSS": ContractableBOSS(random_state=1379, n_jobs=threads_to_use),
-        "TDE": TemporalDictionaryEnsemble(random_state=1379, n_jobs=threads_to_use),
+        # "TDE": TemporalDictionaryEnsemble(random_state=1379, n_jobs=threads_to_use),
         "TDE_FAST": FastTemporalDictionaryEnsemble(
             random_state=1379, n_jobs=threads_to_use
         ),
@@ -320,7 +320,7 @@ def get_classifiers(threads_to_use):
 
 DATA_PATH = "/Users/bzcschae/workspace/UCRArchive_2018/"
 parallel_jobs = 1
-threads_to_use = 4
+threads_to_use = 1
 server = False
 
 # local
