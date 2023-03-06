@@ -87,7 +87,6 @@ check_dict = dict()
 
 
 def check_dflist_panel(obj, return_metadata=False, var_name="obj"):
-
     if not isinstance(obj, list):
         msg = f"{var_name} must be list of pd.DataFrame, found {type(obj)}"
         return _ret(False, msg, None, return_metadata)
@@ -128,7 +127,6 @@ check_dict[("df-list", "Panel")] = check_dflist_panel
 
 
 def check_numpy3d_panel(obj, return_metadata=False, var_name="obj"):
-
     if not isinstance(obj, np.ndarray):
         msg = f"{var_name} must be a numpy.ndarray, found {type(obj)}"
         return _ret(False, msg, None, return_metadata)
@@ -161,7 +159,6 @@ check_dict[("numpy3D", "Panel")] = check_numpy3d_panel
 
 
 def check_pdmultiindex_panel(obj, return_metadata=False, var_name="obj", panel=True):
-
     if not isinstance(obj, pd.DataFrame):
         msg = f"{var_name} must be a pd.DataFrame, found {type(obj)}"
         return _ret(False, msg, None, return_metadata)
@@ -201,7 +198,7 @@ def check_pdmultiindex_panel(obj, return_metadata=False, var_name="obj", panel=T
         return _ret(False, msg, None, return_metadata)
 
     time_obj = obj.reset_index(-1).drop(obj.columns, axis=1)
-    time_grp = time_obj.groupby(level=0, group_keys=True, as_index=True)
+    time_grp = time_obj.groupby(level=0, group_keys=True, sort=False, as_index=True)
     inst_inds = time_obj.index.unique()
 
     # check instance index being integer or range index
@@ -216,11 +213,13 @@ def check_pdmultiindex_panel(obj, return_metadata=False, var_name="obj", panel=T
         # Earlier versions of pandas are very slow for this type of operation.
         is_equally_list = [_index_equally_spaced(obj.loc[i].index) for i in inst_inds]
         is_equally_spaced = all(is_equally_list)
-        montonic_list = [obj.loc[i].index.is_monotonic for i in inst_inds]
-        time_is_monotonic = len([i for i in montonic_list if i is False]) == 0
+        monotonic_list = [obj.loc[i].index.is_monotonic for i in inst_inds]
+        time_is_monotonic = len([i for i in monotonic_list if i is False]) == 0
     else:
         timedelta_by_grp = (
-            time_grp.diff().groupby(level=0, group_keys=True, as_index=True).nunique()
+            time_grp.diff()
+            .groupby(level=0, group_keys=True, sort=False, as_index=True)
+            .nunique()
         )
         timedelta_unique = timedelta_by_grp.iloc[:, 0].unique()
         is_equally_spaced = len(timedelta_unique) == 1
@@ -399,7 +398,6 @@ check_dict[("nested_univ", "Panel")] = is_nested_dataframe
 
 
 def check_numpyflat_Panel(obj, return_metadata=False, var_name="obj"):
-
     if not isinstance(obj, np.ndarray):
         msg = f"{var_name} must be a numpy.ndarray, found {type(obj)}"
         return _ret(False, msg, None, return_metadata)
@@ -434,7 +432,6 @@ if _check_soft_dependencies("dask", severity="none"):
     from sktime.datatypes._adapter.dask_to_pd import check_dask_frame
 
     def check_dask_panel(obj, return_metadata=False, var_name="obj"):
-
         return check_dask_frame(
             obj=obj,
             return_metadata=return_metadata,
