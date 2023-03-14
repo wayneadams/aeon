@@ -4,7 +4,7 @@
 Roles
 =====
 
-The roles are described in sktime's :ref:`governance` document.
+The roles are described in scikit-time's :ref:`governance` document.
 A list of all contributors can be found `here <contributors.md>`_.
 
 Community Council
@@ -25,8 +25,14 @@ Code of Conduct Committee
 
    * - Name
      - GitHub ID
-   * - tbd
-     - :user:`tbd`
+   * - Guzal Bulatova
+     - :user:`GuzalBulatova`
+   * - Katie Buchhorn
+     - :user:`KatieBuc`
+   * - Matthew Middlehurst
+     - :user:`mattewmiddlehurst`
+   * - Patrick Schäfer
+     - :user:`patrickzib`
 
 Core Developers
 ---------------
@@ -53,8 +59,8 @@ Core Developers
    * - Patrick Schäfer
      - :user:`patrickzib`
 
-Pre-split `sktime` Core Developers
-----------------------------------
+Pre-fork Core Developers
+------------------------
 
 .. list-table::
    :header-rows: 1
