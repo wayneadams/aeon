@@ -36,7 +36,7 @@ Processing 26(1):43–49, 1978
 """
 __author__ = ["chrisholder", "TonyBagnall"]
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 from numba import njit
@@ -167,7 +167,7 @@ def _dtw_distance(x: np.ndarray, y: np.ndarray, bounding_matrix: np.ndarray) -> 
 
 @njit(cache=True, fastmath=True)
 def _dtw_cost_matrix(
-    x: np.ndarray, y: np.ndarray, bounding_matrix: np.ndarray
+        x: np.ndarray, y: np.ndarray, bounding_matrix: np.ndarray
 ) -> np.ndarray:
     x_size = x.shape[1]
     y_size = y.shape[1]
@@ -190,7 +190,8 @@ def _dtw_cost_matrix(
 
 @njit(cache=True, fastmath=True)
 def dtw_pairwise_distance(
-    X: np.ndarray, y: np.ndarray = None, window: float = None
+        X: Union[np.ndarray, List], y: Union[np.ndarray, List] = None,
+        window: float = None
 ) -> np.ndarray:
     """Compute the dtw pairwise distance between a set of time series.
 
@@ -245,24 +246,42 @@ def dtw_pairwise_distance(
     """
     if y is None:
         # To self
-        if X.ndim == 3:
-            return _dtw_pairwise_distance(X, window)
-        if X.ndim == 2:
-            _X = X.reshape((X.shape[0], 1, X.shape[1]))
-            return _dtw_pairwise_distance(_X, window)
+        if isinstance(X, list):
+            if X[0].ndim == 2:
+                return _dtw_np_list_pairwise_distance(X, window)
+            if X[0].ndim == 1:
+                _X = [_x.reshape((1, x_temp.shape[0])) for x_temp in X]
+                return _dtw_np_list_pairwise_distance(_X, window)
+        else:
+            if X.ndim == 3:
+                return _dtw_pairwise_distance(X, window)
+            if X.ndim == 2:
+                _X = X.reshape((X.shape[0], 1, X.shape[1]))
+                return _dtw_pairwise_distance(_X, window)
+            if X.ndim == 1:
+                _X = X.reshape((1, 1, X.shape[0]))
+                return _dtw_pairwise_distance(_X, window)
         raise ValueError("x and y must be 2D or 3D arrays")
     elif y.ndim == X.ndim:
         # Multiple to multiple
-        if y.ndim == 3 and X.ndim == 3:
-            return _dtw_from_multiple_to_multiple_distance(X, y, window)
-        if y.ndim == 2 and X.ndim == 2:
-            _x = X.reshape((X.shape[0], 1, X.shape[1]))
-            _y = y.reshape((y.shape[0], 1, y.shape[1]))
-            return _dtw_from_multiple_to_multiple_distance(_x, _y, window)
-        if y.ndim == 1 and X.ndim == 1:
-            _x = X.reshape((1, 1, X.shape[0]))
-            _y = y.reshape((1, 1, y.shape[0]))
-            return _dtw_from_multiple_to_multiple_distance(_x, _y, window)
+        if isinstance(X, list):
+            if y[0].ndim == 2 and X[0].ndim == 2:
+                return _dtw_np_list_pairwise_distance(X, y, window)
+            if y[0].ndim == 1 and X[0].ndim == 1:
+                _x = [X.reshape((1, x_temp.shape[0])) for x_temp in X]
+                _y = [y.reshape((1, y_temp.shape[0])) for y_temp in y]
+                return _dtw_np_list_pairwise_distance(X, y, window)
+        else:
+            if y.ndim == 3 and X.ndim == 3:
+                return _dtw_from_multiple_to_multiple_distance(X, y, window)
+            if y.ndim == 2 and X.ndim == 2:
+                _x = X.reshape((X.shape[0], 1, X.shape[1]))
+                _y = y.reshape((y.shape[0], 1, y.shape[1]))
+                return _dtw_from_multiple_to_multiple_distance(_x, _y, window)
+            if y.ndim == 1 and X.ndim == 1:
+                _x = X.reshape((1, 1, X.shape[0]))
+                _y = y.reshape((1, 1, y.shape[0]))
+                return _dtw_from_multiple_to_multiple_distance(_x, _y, window)
         raise ValueError("x and y must be 1D, 2D, or 3D arrays")
     else:
         # Single to multiple
@@ -300,7 +319,7 @@ def _dtw_pairwise_distance(X: np.ndarray, window: float) -> np.ndarray:
 
 @njit(cache=True, fastmath=True)
 def _dtw_from_multiple_to_multiple_distance(
-    x: np.ndarray, y: np.ndarray, window: float
+        x: np.ndarray, y: np.ndarray, window: float
 ) -> np.ndarray:
     n_instances = x.shape[0]
     m_instances = y.shape[0]
@@ -314,8 +333,43 @@ def _dtw_from_multiple_to_multiple_distance(
 
 
 @njit(cache=True, fastmath=True)
+def _dtw_np_list_pairwise_distance(X: List[np.ndarray], window: float) -> np.ndarray:
+    n_instances = len(X)
+    distances = np.zeros((n_instances, n_instances))
+
+    for i in range(n_instances):
+        curr_x = X[i]
+        for j in range(i + 1, n_instances):
+            bounding_matrix = create_bounding_matrix(
+                curr_x.shape[1], X[j].shape[1], window
+            )
+            distances[i, j] = _dtw_distance(curr_x, X[j], bounding_matrix)
+            distances[j, i] = distances[i, j]
+
+    return distances
+
+
+@njit(cache=True, fastmath=True)
+def _dtw_np_list_from_multiple_to_multiple_distance(
+        x: List[np.ndarray], y: List[np.ndarray], window: float
+) -> np.ndarray:
+    n_instances = len(x)
+    m_instances = len(y)
+    distances = np.zeros((n_instances, m_instances))
+
+    for i in range(n_instances):
+        curr_x = x[i]
+        for j in range(m_instances):
+            bounding_matrix = create_bounding_matrix(
+                curr_x.shape[1], y[j].shape[1], window
+            )
+            distances[i, j] = _dtw_distance(curr_x[i], y[j], bounding_matrix)
+    return distances
+
+
+@njit(cache=True, fastmath=True)
 def dtw_alignment_path(
-    x: np.ndarray, y: np.ndarray, window: float = None
+        x: np.ndarray, y: np.ndarray, window: float = None
 ) -> Tuple[List[Tuple[int, int]], float]:
     """Compute the dtw alignment path between two time series.
 

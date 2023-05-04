@@ -278,3 +278,20 @@ def test_new_single_to_multiple_distances(dist):
         dist["distance"],
         dist["pairwise_distance"],
     )
+
+
+def test_dtw_np_list():
+    np_list = []
+    for i in range(10):
+        np_list.append(np.random.random((2, 5 + i)))
+
+    # val = compute_pairwise_distance(np_list, metric="dtw")
+    np_list = []
+    for i in range(10):
+        np_list.append(np.random.random((5 + i)))
+
+    new_arr = []
+    for item in np_list:
+        new_arr.append(item.reshape((1, item.shape[0])))
+
+    joe = ""
