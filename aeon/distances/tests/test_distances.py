@@ -75,3 +75,10 @@ def test_distances(dist):
         dist["distance"],
         _expected_distance_results[dist["name"]][4],
     )
+
+def test_dtw_np_list():
+    np_list = []
+    for i in range(10):
+        np_list.append(np.random.random((2, 5 + i)))
+
+    joe = ""
