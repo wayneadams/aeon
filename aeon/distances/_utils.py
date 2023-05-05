@@ -1,22 +1,37 @@
-from numba.typed import List
+from typing import Tuple, Union
 
-from typing import Tuple
+from numba.typed import List
 import numpy as np
 from numba import njit
-
-
-def reshape_distance_ts(arr: np.ndarray):
-    if arr.ndim == 2:
-        return arr.reshape((1, arr.shape[0], arr.shape[1]))
-    elif arr.ndim == 1:
-        return arr.reshape((1, 1, arr.shape[0]))
-    raise ValueError("Time series must be 1D or 2D")
 
 
 @njit(cache=True, fastmath=True)
 def reshape_pairwise_to_multiple(
         x: np.ndarray, y: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """Reshape two collection of time series for pairwise distance computation.
+
+    Parameters
+    ----------
+    x: np.ndarray, of shape (n_instances, n_channels, n_timepoints) or
+            (n_instances, n_timepoints) or (n_timepoints,) or List[np.ndarray]
+        A collection of time series instances.
+    y: np.ndarray, of shape (m_instances, m_channels, m_timepoints) or
+            (m_instances, m_timepoints) or (m_timepoints,) or List[np.ndarray]
+        A collection of time series instances.
+
+    Returns
+    -------
+    np.ndarray
+        Reshaped x.
+    np.ndarray
+        Reshaped y.
+
+    Raises
+    ------
+    ValueError
+        If x and y are not 1D, 2D or 3D arrays.
+    """
     if x.ndim == y.ndim:
         if y.ndim == 3 and x.ndim == 3:
             return x, y
@@ -48,36 +63,43 @@ def reshape_pairwise_to_multiple(
 
 
 @njit(cache=True, fastmath=True)
-def reshape_pairwise_np_list(np_list: List[np.ndarray]):
-    """Reshape a np.ndarray np-list to a 2d np.ndarray np-list.
+def reshape_pairwise_1d_np_list(np_list: List[np.ndarray]):
+    new_arr = List()
+    for item in np_list:
+        new_arr.append(item.reshape((1, item.shape[0])))
+    return new_arr
 
-    Parameters
-    ----------
-    np_list : numba.typed.List[np.ndarray]
-        A list of np.ndarrays (which can be different lengths).
 
-    Returns
-    -------
-    new_arr : numba.typed.List[np.ndarray], where the np.ndarrays are of shape (1, n_i).
-        A list of 2d np.ndarrays (which can be different lengths)
-
-    Examples
-    --------
-    >>> from aeon.distances._utils import reshape_pairwise_np_list
-    >>> np_list_1d = List([np.array([1, 2, 3]), np.array([4, 5, 6, 7])])
-    >>> reshape_pairwise_np_list(np_list_1d)
-    ListType[array(int64, 2d, C)]([[[1 2 3]], [[4 5 6 7]]])
-    """
-    if np_list[0].ndim == 2:
-        return np_list
-    elif np_list[0].ndim == 1:
-        new_arr = List()
-        for item in np_list:
-            new_arr.append(item.reshape((1, item.shape[0])))
-        return new_arr
-    elif np_list[0].ndim == 0:
-        new_arr = List()
-        for item in np_list:
-            new_arr.append(item.reshape((1, item.shape[0])))
-    else:
+@njit(cache=True, fastmath=True)
+def reshape_pairwise_to_multiple_np_list(
+        x: List[np.ndarray], y: List[np.ndarray]
+) -> Tuple[np.ndarray, np.ndarray]:
+    x_dims = x[0].ndim
+    y_dims = y[0].ndim
+    if x_dims == y_dims:
+        if y_dims == 2 and x_dims == 2:
+            return x, y
+        if y_dims == 1 and x_dims == 1:
+            _x = reshape_pairwise_1d_np_list(x)
+            _y = reshape_pairwise_1d_np_list(y)
+            return _x, _y
+        if y_dims == 0 and x_dims == 0:
+            _x = List(np.array([[x]]))
+            _y = List(np.array([[y]]))
+            return _x, _y
         raise ValueError("x and y must be 1D, 2D, or 3D arrays")
+    if x_dims == 2 and y_dims == 1:
+        _y = reshape_pairwise_1d_np_list(y)
+        return x, _y
+    if y_dims == 2 and x_dims == 1:
+        _x = reshape_pairwise_1d_np_list(x)
+        return _x, y
+    if x_dims == 1 and y_dims == 0:
+        _x = reshape_pairwise_1d_np_list(x)
+        _y = List(np.array([[y]]))
+        return _x, _y
+    if y_dims == 1 and x_dims == 0:
+        _y = reshape_pairwise_1d_np_list(y)
+        _x = List(np.array([[x]]))
+        return _x, _y
+    raise ValueError("x and y must be 2D or 3D arrays")

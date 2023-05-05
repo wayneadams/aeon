@@ -50,7 +50,11 @@ from aeon.distances._twe import (
     twe_distance,
     twe_pairwise_distance,
 )
-from aeon.distances._utils import reshape_pairwise_to_multiple, reshape_pairwise_np_list
+from aeon.distances._utils import (
+    reshape_pairwise_to_multiple,
+    reshape_pairwise_1d_np_list,
+    reshape_pairwise_to_multiple_np_list
+)
 from aeon.distances._wddtw import (
     wddtw_alignment_path,
     wddtw_cost_matrix,
@@ -248,27 +252,31 @@ def _custom_func_pairwise(
         # To self
         if isinstance(X, list):
             if X[0].ndim == 2:
-                return _custom_pairwise_distance(X, dist_func, len(X), **kwargs)
+                return _custom_pairwise_distance(X, dist_func, **kwargs)
             if X[0].ndim == 1:
-                _X = reshape_pairwise_np_list(NumbaList(X))
-                return _custom_pairwise_distance(_X, dist_func, len(X), **kwargs)
+                _X = reshape_pairwise_1d_np_list(NumbaList(X))
+                return _custom_pairwise_distance(_X, dist_func, **kwargs)
         else:
             if X.ndim == 3:
-                return _custom_pairwise_distance(X, dist_func, X.shape[0], **kwargs)
+                return _custom_pairwise_distance(X, dist_func, **kwargs)
             if X.ndim == 2:
                 _X = X.reshape((X.shape[0], 1, X.shape[1]))
-                return _custom_pairwise_distance(_X, dist_func, _X.shape[0], **kwargs)
+                return _custom_pairwise_distance(_X, dist_func, **kwargs)
         raise ValueError("x and y must be 2D or 3D arrays")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
+
+    if isinstance(X, list) and isinstance(y, list):
+        _x, _y = reshape_pairwise_to_multiple_np_list(NumbaList(X), NumbaList(y))
+    else:
+        _x, _y = reshape_pairwise_to_multiple(X, y)
     return _custom_from_multiple_to_multiple_distance(_x, _y, dist_func, **kwargs)
 
 
 def _custom_pairwise_distance(
         X: np.ndarray,
         dist_func: DistanceFunction,
-        n_instances: int,
         **kwargs
 ) -> np.ndarray:
+    n_instances = len(X)
     distances = np.zeros((n_instances, n_instances))
 
     for i in range(n_instances):
@@ -283,10 +291,10 @@ def _custom_from_multiple_to_multiple_distance(
         x: np.ndarray,
         y: np.ndarray,
         dist_func: DistanceFunction,
-        n_instances: int,
-        m_instances: int,
         **kwargs
 ) -> np.ndarray:
+    n_instances = len(x)
+    m_instances = len(y)
     distances = np.zeros((n_instances, m_instances))
 
     for i in range(n_instances):

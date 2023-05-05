@@ -45,7 +45,10 @@ from numba.typed import List as NumbaList
 from aeon.distances._alignment_paths import compute_min_return_path
 from aeon.distances._bounding_matrix import create_bounding_matrix
 from aeon.distances._squared import _univariate_squared_distance
-from aeon.distances._utils import reshape_pairwise_to_multiple, reshape_pairwise_np_list
+from aeon.distances._utils import (
+    reshape_pairwise_to_multiple, reshape_pairwise_1d_np_list,
+    reshape_pairwise_to_multiple_np_list
+)
 
 
 @njit(cache=True, fastmath=True)
@@ -190,7 +193,7 @@ def _dtw_cost_matrix(
     return cost_matrix[1:, 1:]
 
 
-@njit(cache=True, fastmath=True)
+# @njit(cache=True, fastmath=True)
 def dtw_pairwise_distance(
         X: Union[np.ndarray, List], y: Union[np.ndarray, List] = None,
         window: float = None
@@ -248,14 +251,25 @@ def dtw_pairwise_distance(
     """
     if y is None:
         # To self
-        if X.ndim == 3:
-            return _dtw_pairwise_distance(X, window)
-        if X.ndim == 2:
-            _X = X.reshape((X.shape[0], 1, X.shape[1]))
-            return _dtw_pairwise_distance(_X, window)
+        if isinstance(X, list):
+            if X[0].ndim == 2:
+                return _dtw_np_list_pairwise_distance(X, window)
+            if X[0].ndim == 1:
+                _X = reshape_pairwise_1d_np_list(NumbaList(X))
+                return _dtw_np_list_pairwise_distance(_X, window)
+        else:
+            if X.ndim == 3:
+                return _dtw_pairwise_distance(X, window)
+            if X.ndim == 2:
+                _X = X.reshape((X.shape[0], 1, X.shape[1]))
+                return _dtw_pairwise_distance(_X, window)
         raise ValueError("x and y must be 2D or 3D arrays")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
-    return _dtw_from_multiple_to_multiple_distance(_x, _y, window)
+    if isinstance(X, list) and isinstance(y, list):
+        _x, _y = reshape_pairwise_to_multiple_np_list(NumbaList(X), NumbaList(y))
+        return _dtw_np_list_from_multiple_to_multiple_distance(_x, _y, window)
+    else:
+        _x, _y = reshape_pairwise_to_multiple(X, y)
+        return _dtw_from_multiple_to_multiple_distance(_x, _y, window)
 
 
 @njit(cache=True, fastmath=True)
