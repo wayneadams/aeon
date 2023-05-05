@@ -10,10 +10,10 @@ from aeon.utils._testing.series import _make_series
 
 
 def create_test_distance_numpy(
-    n_instance: int,
-    n_columns: int = None,
-    n_timepoints: int = None,
-    random_state: int = 1,
+        n_instance: int,
+        n_columns: int = None,
+        n_timepoints: int = None,
+        random_state: int = 1,
 ):
     """Create a test numpy distance.
 

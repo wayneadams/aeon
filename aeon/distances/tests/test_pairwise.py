@@ -5,14 +5,24 @@ from numpy.testing import assert_almost_equal
 
 from aeon.distances import pairwise_distance as compute_pairwise_distance
 from aeon.distances._distance import DISTANCES
-from aeon.distances.tests._utils import _make_3d_series, create_test_distance_numpy
+from aeon.distances.tests._utils import (
+    _make_3d_series, create_test_distance_numpy
+)
+
+
+added_np_list_for = ["dtw"]
+def _convert_to_np_list_arr(arr: np.ndarray):
+    np_list_arr = []
+    for temp in arr:
+        np_list_arr.append(temp)
+    return np_list_arr
 
 
 def _validate_pairwise_result(
-    x: np.ndarray,
-    name,  # This will be used in a later pr
-    distance,
-    pairwise_distance,
+        x: np.ndarray,
+        name,  # This will be used in a later pr
+        distance,
+        pairwise_distance,
 ):
     pairwise_result = pairwise_distance(x)
 
@@ -38,13 +48,20 @@ def _validate_pairwise_result(
 
     assert np.allclose(matrix, pairwise_result)
 
+    if name not in added_np_list_for:
+        return
+
+    np_list_arr = _convert_to_np_list_arr(x)
+    np_list_pw = pairwise_distance(np_list_arr)
+    assert np.array_equal(np_list_pw, pairwise_result)
+
 
 def _validate_multiple_to_multiple_result(
-    x,
-    y,
-    name,  # This will be used in a later pr
-    distance,
-    multiple_to_multiple_distance,
+        x,
+        y,
+        name,  # This will be used in a later pr
+        distance,
+        multiple_to_multiple_distance,
 ):
     multiple_to_multiple_result = multiple_to_multiple_distance(x, y)
 
@@ -78,13 +95,21 @@ def _validate_multiple_to_multiple_result(
 
     assert np.allclose(matrix, multiple_to_multiple_result)
 
+    if name not in added_np_list_for:
+        return
+
+    np_list_x = _convert_to_np_list_arr(x)
+    np_list_y = _convert_to_np_list_arr(y)
+    np_list_pw = multiple_to_multiple_distance(np_list_x, np_list_y)
+    assert np.array_equal(np_list_pw, multiple_to_multiple_result)
+
 
 def _validate_single_to_multiple_result(
-    x,
-    y,
-    name,  # This will be used in a later pr
-    distance,
-    single_to_multiple_distance,
+        x,
+        y,
+        name,  # This will be used in a later pr
+        distance,
+        single_to_multiple_distance,
 ):
     single_to_multiple_result = single_to_multiple_distance(x, y)
 
@@ -107,6 +132,14 @@ def _validate_single_to_multiple_result(
         curr = single_to_multiple_result[0, i]
         dist = distance(x, curr_y)
         assert_almost_equal(dist, curr)
+
+    if name not in added_np_list_for:
+        return
+
+    np_list_x = _convert_to_np_list_arr(x)
+    np_list_y = _convert_to_np_list_arr(y)
+    np_list_pw = single_to_multiple_distance(np_list_x, np_list_y)
+    assert np.array_equal(np_list_pw, single_to_multiple_result)
 
 
 @pytest.mark.parametrize("dist", DISTANCES)
@@ -205,9 +238,6 @@ def test_multiple_to_multiple_distances(dist):
     )
 
 
-new_distance = ["euclidean", "dtw"]
-
-
 @pytest.mark.parametrize("dist", DISTANCES)
 def test_new_single_to_multiple_distances(dist):
     # Univariate tests
@@ -278,20 +308,3 @@ def test_new_single_to_multiple_distances(dist):
         dist["distance"],
         dist["pairwise_distance"],
     )
-
-
-def test_dtw_np_list():
-    np_list = []
-    for i in range(10):
-        np_list.append(np.random.random((2, 5 + i)))
-
-    # val = compute_pairwise_distance(np_list, metric="dtw")
-    np_list = []
-    for i in range(10):
-        np_list.append(np.random.random((5 + i)))
-
-    new_arr = []
-    for item in np_list:
-        new_arr.append(item.reshape((1, item.shape[0])))
-
-    joe = ""

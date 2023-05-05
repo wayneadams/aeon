@@ -4,6 +4,7 @@ __author__ = ["chrisholder", "TonyBagnall"]
 from typing import Any, Callable, List, Tuple, Union
 
 import numpy as np
+from numba.typed import List as NumbaList
 
 from aeon.distances._ddtw import (
     ddtw_alignment_path,
@@ -61,6 +62,7 @@ from aeon.distances._wdtw import (
     wdtw_distance,
     wdtw_pairwise_distance,
 )
+from aeon.distances._utils import reshape_pairwise_np_list
 
 DistanceFunction = Callable[[np.ndarray, np.ndarray, Any], float]
 AlignmentPathFunction = Callable[
@@ -244,61 +246,94 @@ def _custom_func_pairwise(
 ) -> np.ndarray:
     if y is None:
         # To self
-        if X.ndim == 3:
-            return _custom_pairwise_distance(X, dist_func, **kwargs)
-        if X.ndim == 2:
-            _X = X.reshape((X.shape[0], 1, X.shape[1]))
-            return _custom_pairwise_distance(_X, dist_func, **kwargs)
-        raise ValueError("x and y must be 2D or 3D arrays")
-    elif y.ndim == X.ndim:
-        # Multiple to multiple
-        if y.ndim == 3 and X.ndim == 3:
-            return _custom_from_multiple_to_multiple_distance(X, y, dist_func, **kwargs)
-        if y.ndim == 2 and X.ndim == 2:
-            _x = X.reshape((X.shape[0], 1, X.shape[1]))
-            _y = y.reshape((y.shape[0], 1, y.shape[1]))
-            return _custom_from_multiple_to_multiple_distance(
-                _x, _y, dist_func, **kwargs
-            )
-        if y.ndim == 1 and X.ndim == 1:
-            _x = X.reshape((1, 1, X.shape[0]))
-            _y = y.reshape((1, 1, y.shape[0]))
-            return _custom_from_multiple_to_multiple_distance(
-                _x, _y, dist_func, **kwargs
-            )
-        raise ValueError("x and y must be 1D, 2D, or 3D arrays")
-    else:
-        # Single to multiple
-        if X.ndim == 3 and y.ndim == 2:
-            _y = y.reshape((1, y.shape[0], y.shape[1]))
-            return _custom_from_multiple_to_multiple_distance(
-                X, _y, dist_func, **kwargs
-            )
-        if y.ndim == 3 and X.ndim == 2:
-            _x = X.reshape((1, X.shape[0], X.shape[1]))
-            return _custom_from_multiple_to_multiple_distance(
-                _x, y, dist_func, **kwargs
-            )
-        if X.ndim == 2 and y.ndim == 1:
-            _x = X.reshape((X.shape[0], 1, X.shape[1]))
-            _y = y.reshape((1, 1, y.shape[0]))
-            return _custom_from_multiple_to_multiple_distance(
-                _x, _y, dist_func, **kwargs
-            )
-        if y.ndim == 2 and X.ndim == 1:
-            _x = X.reshape((1, 1, X.shape[0]))
-            _y = y.reshape((y.shape[0], 1, y.shape[1]))
-            return _custom_from_multiple_to_multiple_distance(
-                _x, _y, dist_func, **kwargs
-            )
+        if isinstance(X, list):
+            if X[0].ndim == 2:
+                return _custom_pairwise_distance(X, dist_func, len(X), **kwargs)
+            if X[0].ndim == 1:
+                _X = reshape_pairwise_np_list(NumbaList(X))
+                return _custom_pairwise_distance(_X, dist_func, len(X), **kwargs)
         else:
+            if X.ndim == 3:
+                return _custom_pairwise_distance(X, dist_func, X.shape[0], **kwargs)
+            if X.ndim == 2:
+                _X = X.reshape((X.shape[0], 1, X.shape[1]))
+                return _custom_pairwise_distance(_X, dist_func, _X.shape[0], **kwargs)
+        raise ValueError("x and y must be 2D or 3D arrays")
+    elif isinstance(X, list):
+        if y[0].ndim == X[0].ndim:
+            # Multiple to multiple
+            if y[0].ndim == 2 and X[0].ndim == 2:
+                return _custom_from_multiple_to_multiple_distance(
+                    X, y, dist_func, len(X), len(y), **kwargs
+                )
+            if y[0].ndim == 1 and X[0].ndim == 1:
+                _x = reshape_pairwise_np_list(NumbaList(X))
+                _y = reshape_pairwise_np_list(NumbaList(y))
+                return _custom_from_multiple_to_multiple_distance(
+                    _x, _y, dist_func, len(_x), len(_y), **kwargs
+                )
+        else:
+            if X[0].ndim == 1 and y[0].ndim == 2:
+                _X = reshape_pairwise_np_list(NumbaList(X))
+                return _custom_from_multiple_to_multiple_distance(
+                    _X, y, dist_func, len(_X), len(y), **kwargs
+                )
+            if X[0].ndim == 2 and y[0].ndim == 1:
+                _y = reshape_pairwise_np_list(NumbaList(y))
+                return _custom_from_multiple_to_multiple_distance(
+                    X, y, dist_func, len(X), len(_y), **kwargs
+                )
+    else:
+        if y.ndim == X.ndim:
+            if y.ndim == 3 and X.ndim == 3:
+                return _custom_from_multiple_to_multiple_distance(
+                    X, y, dist_func, X.shape[0], y.shape[0], **kwargs
+                )
+            if y.ndim == 2 and X.ndim == 2:
+                _x = X.reshape((X.shape[0], 1, X.shape[1]))
+                _y = y.reshape((y.shape[0], 1, y.shape[1]))
+                return _custom_from_multiple_to_multiple_distance(
+                    _x, _y, dist_func, _x.shape[0], _y.shape[0], **kwargs
+                )
+            if y.ndim == 1 and X.ndim == 1:
+                _x = X.reshape((1, 1, X.shape[0]))
+                _y = y.reshape((1, 1, y.shape[0]))
+                return _custom_from_multiple_to_multiple_distance(
+                    _x, _y, dist_func, _x.shape[0], _y.shape[0], **kwargs
+                )
+            raise ValueError("x and y must be 1D, 2D, or 3D arrays")
+        else:
+            if X.ndim == 3 and y.ndim == 2:
+                _y = y.reshape((1, y.shape[0], y.shape[1]))
+                return _custom_from_multiple_to_multiple_distance(
+                    X, _y, dist_func, X.shape[0], _y.shape[0], **kwargs
+                )
+            if y.ndim == 3 and X.ndim == 2:
+                _x = X.reshape((1, X.shape[0], X.shape[1]))
+                return _custom_from_multiple_to_multiple_distance(
+                    _x, y, dist_func, _x.shape[0], y.shape[0], **kwargs
+                )
+            if X.ndim == 2 and y.ndim == 1:
+                _x = X.reshape((X.shape[0], 1, X.shape[1]))
+                _y = y.reshape((1, 1, y.shape[0]))
+                return _custom_from_multiple_to_multiple_distance(
+                    _x, _y, dist_func, _x.shape[0], _y.shape[0], **kwargs
+                )
+            if y.ndim == 2 and X.ndim == 1:
+                _x = X.reshape((1, 1, X.shape[0]))
+                _y = y.reshape((y.shape[0], 1, y.shape[1]))
+                return _custom_from_multiple_to_multiple_distance(
+                    _x, _y, dist_func, _x.shape[0], _y.shape[0], **kwargs
+                )
             raise ValueError("x and y must be 2D or 3D arrays")
 
 
 def _custom_pairwise_distance(
-    X: np.ndarray, dist_func: DistanceFunction, **kwargs
+        X: np.ndarray,
+        dist_func: DistanceFunction,
+        n_instances: int,
+        **kwargs
 ) -> np.ndarray:
-    n_instances = X.shape[0]
     distances = np.zeros((n_instances, n_instances))
 
     for i in range(n_instances):
@@ -310,10 +345,13 @@ def _custom_pairwise_distance(
 
 
 def _custom_from_multiple_to_multiple_distance(
-    x: np.ndarray, y: np.ndarray, dist_func: DistanceFunction, **kwargs
+        x: np.ndarray,
+        y: np.ndarray,
+        dist_func: DistanceFunction,
+        n_instances: int,
+        m_instances: int,
+        **kwargs
 ) -> np.ndarray:
-    n_instances = x.shape[0]
-    m_instances = y.shape[0]
     distances = np.zeros((n_instances, m_instances))
 
     for i in range(n_instances):
