@@ -32,7 +32,7 @@ from numba import njit
 from aeon.distances._alignment_paths import compute_min_return_path
 from aeon.distances._bounding_matrix import create_bounding_matrix
 from aeon.distances._squared import _univariate_squared_distance
-from aeon.distances._utils import reshape_pairwise_to_multiple
+from aeon.distances._utils import _reshape_ndarray_for_multiple_to_multiple
 
 
 @njit(cache=True, fastmath=True)
@@ -281,7 +281,7 @@ def wdtw_pairwise_distance(
             _X = X.reshape((X.shape[0], 1, X.shape[1]))
             return _wdtw_pairwise_distance(_X, window, g)
         raise ValueError("x and y must be 2D or 3D arrays")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
+    _x, _y = _reshape_ndarray_for_multiple_to_multiple(X, y)
     return _wdtw_from_multiple_to_multiple_distance(_x, _y, window, g)
 
 

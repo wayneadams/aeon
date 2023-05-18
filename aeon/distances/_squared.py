@@ -4,7 +4,11 @@ __author__ = ["chrisholder", "tonybagnall"]
 import numpy as np
 from numba import njit
 
-from aeon.distances._utils import reshape_pairwise_to_multiple
+from aeon.distances._utils import (
+    _reshape_ndarray_for_multiple_to_multiple,
+    _reshape_np_list_to_2d_np_list,
+    python_list_to_numba_list
+)
 
 
 @njit(cache=True, fastmath=True)
@@ -115,23 +119,62 @@ def squared_pairwise_distance(X: np.ndarray, y: np.ndarray = None) -> np.ndarray
     array([[300.],
            [147.],
            [ 48.]])
-
     """
     if y is None:
         # To self
-        if X.ndim == 3:
-            return _squared_pairwise_distance(X)
-        elif X.ndim == 2:
-            _X = X.reshape((X.shape[0], 1, X.shape[1]))
-            return _squared_pairwise_distance(_X)
+        if isinstance(X, list):
+            x_dims = X[0].ndim
+            if x_dims == 2:
+                _X = python_list_to_numba_list(X)
+                return _squared_pairwise_distance(_X)
+            if x_dims == 1:
+                _X = _reshape_np_list_to_2d_np_list(X)
+                return _squared_pairwise_distance(_X)
+            raise ValueError("X must be 2D or 3D array")
+        else:
+            if X.ndim == 3:
+                return _squared_pairwise_distance(X)
+            if X.ndim == 2:
+                _X = X.reshape((X.shape[0], 1, X.shape[1]))
+                return _squared_pairwise_distance(_X)
         raise ValueError("X must be 2D or 3D array")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
+
+    if isinstance(X, list):
+        x_dims = X[0].ndim
+        y_dims = y[0].ndim
+        if x_dims == y_dims:
+            if x_dims == 2:
+                _X = python_list_to_numba_list(X)
+                _y = python_list_to_numba_list(y)
+                return _squared_from_multiple_to_multiple_distance(_X, _y)
+            if x_dims == 1:
+                _X = _reshape_np_list_to_2d_np_list(X)
+                _y = _reshape_np_list_to_2d_np_list(y)
+                return _squared_from_multiple_to_multiple_distance(_X, _y)
+            raise ValueError("X must be 2D or 3D array")
+        else:
+            if x_dims == 2 and y_dims == 1:
+                _X = python_list_to_numba_list(X)
+                _y = _reshape_np_list_to_2d_np_list(y)
+                return _squared_from_multiple_to_multiple_distance(_X, _y)
+            if x_dims == 1 and y_dims == 2:
+                _X = _reshape_np_list_to_2d_np_list(X)
+                _y = python_list_to_numba_list(y)
+                return _squared_from_multiple_to_multiple_distance(_X, _y)
+            if x_dims == 1 and y_dims == 0:
+                pass
+            if x_dims == 0 and y_dims == 1:
+                pass
+
+            raise ValueError("X and y must have the same number of dimensions")
+    else:
+        _x, _y = _reshape_ndarray_for_multiple_to_multiple(X, y)
     return _squared_from_multiple_to_multiple_distance(_x, _y)
 
 
 @njit(cache=True, fastmath=True)
 def _squared_pairwise_distance(X: np.ndarray) -> np.ndarray:
-    n_instances = X.shape[0]
+    n_instances = len(X)
     distances = np.zeros((n_instances, n_instances))
 
     for i in range(n_instances):
@@ -144,10 +187,10 @@ def _squared_pairwise_distance(X: np.ndarray) -> np.ndarray:
 
 @njit(cache=True, fastmath=True)
 def _squared_from_multiple_to_multiple_distance(
-    x: np.ndarray, y: np.ndarray
+        x: np.ndarray, y: np.ndarray
 ) -> np.ndarray:
-    n_instances = x.shape[0]
-    m_instances = y.shape[0]
+    n_instances = len(x)
+    m_instances = len(y)
     distances = np.zeros((n_instances, m_instances))
 
     for i in range(n_instances):

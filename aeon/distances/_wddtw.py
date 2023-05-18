@@ -14,7 +14,7 @@ from numba import njit
 from aeon.distances._alignment_paths import compute_min_return_path
 from aeon.distances._bounding_matrix import create_bounding_matrix
 from aeon.distances._ddtw import average_of_slope
-from aeon.distances._utils import reshape_pairwise_to_multiple
+from aeon.distances._utils import _reshape_ndarray_for_multiple_to_multiple
 from aeon.distances._wdtw import _wdtw_cost_matrix, _wdtw_distance
 
 
@@ -210,7 +210,7 @@ def wddtw_pairwise_distance(
             _X = X.reshape((X.shape[0], 1, X.shape[1]))
             return _wddtw_pairwise_distance(_X, window, g)
         raise ValueError("x and y must be 2D or 3D arrays")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
+    _x, _y = _reshape_ndarray_for_multiple_to_multiple(X, y)
     return _wddtw_from_multiple_to_multiple_distance(_x, _y, window, g)
 
 

@@ -5,7 +5,7 @@ import numpy as np
 from numba import njit
 
 from aeon.distances._squared import _univariate_squared_distance, squared_distance
-from aeon.distances._utils import reshape_pairwise_to_multiple
+from aeon.distances._utils import _reshape_ndarray_for_multiple_to_multiple
 
 
 @njit(cache=True, fastmath=True)
@@ -117,7 +117,7 @@ def euclidean_pairwise_distance(X: np.ndarray, y: np.ndarray = None) -> np.ndarr
             _X = X.reshape((X.shape[0], 1, X.shape[1]))
             return _euclidean_pairwise_distance(_X)
         raise ValueError("X must be 2D or 3D array")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
+    _x, _y = _reshape_ndarray_for_multiple_to_multiple(X, y)
     return _euclidean_from_multiple_to_multiple_distance(_x, _y)
 
 

@@ -34,7 +34,7 @@ from aeon.distances._alignment_paths import (
 )
 from aeon.distances._bounding_matrix import create_bounding_matrix
 from aeon.distances._squared import _univariate_squared_distance
-from aeon.distances._utils import reshape_pairwise_to_multiple
+from aeon.distances._utils import _reshape_ndarray_for_multiple_to_multiple
 
 
 @njit(cache=True, fastmath=True)
@@ -383,7 +383,7 @@ def msm_pairwise_distance(
                 _x, _y, window, independent, c
             )
         raise ValueError("x and y must be 1D, 2D, or 3D arrays")
-    _x, _y = reshape_pairwise_to_multiple(X, y)
+    _x, _y = _reshape_ndarray_for_multiple_to_multiple(X, y)
     return _msm_from_multiple_to_multiple_distance(_x, _y, window, independent, c)
 
 
