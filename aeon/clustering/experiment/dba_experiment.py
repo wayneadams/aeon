@@ -580,7 +580,7 @@ if __name__ == "__main__":
         average_params=average_params,
         random_state=resample + 1,
     )
-    print(f" Window parameters for {distance_params}")
+    print(f"Running kmeans with {clst.get_params()}")  # noqa
     run_clustering_experiment(
         train_X,
         clst,
