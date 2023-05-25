@@ -7,7 +7,7 @@
 # While reading is fine, please dont write anything to the default directories in this script
 
 # Start and end for resamples
-max_folds=2
+max_folds=1
 start_fold=1
 
 # To avoid dumping 1000s of jobs in the queue we have a higher level queue
@@ -53,10 +53,10 @@ generate_test_files="true"
 
 # See set_clusterer for aliases
 count=0
-clusterer="kmeans-dba"
+clusterer="kmeans-dba-ten-init"
 while read dataset; do
 #  squared dtw ddtw wdtw wddtw lcss erp edr msm twe
-  for distance in dtw
+  for distance in msm dtw twe
   do
     for init in random
     do

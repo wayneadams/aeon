@@ -574,7 +574,7 @@ if __name__ == "__main__":
         metric=distance,
         distance_params=distance_params,
         init_algorithm=init,
-        n_init=1,
+        n_init=10,
         max_iter=300,
         averaging_method="dba",
         average_params=average_params,
