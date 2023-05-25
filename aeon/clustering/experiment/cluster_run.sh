@@ -38,8 +38,8 @@ datasets="/gpfs/home/ajb/DataSetLists/TSC_112_2019.txt"
 local_path="/gpfs/home/$username/"
 
 # Results and output file write location. Change these to reflect your own file structure
-results_dir=$local_path"results/dba-experiment/"
-out_dir=$local_path"results/dba-experiment/output/"
+results_dir=$local_path"results/dba-experiment-10-init-1-fold/"
+out_dir=$local_path"results/dba-experiment-10-init-1-fold/output/"
 
 # The python script we are running
 script_file_path=$local_path"code/aeon/aeon/clustering/experiments/dba_experiment.py"
