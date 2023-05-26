@@ -38,11 +38,11 @@ datasets="/gpfs/home/ajb/DataSetLists/TSC_112_2019.txt"
 local_path="/gpfs/home/$username/"
 
 # Results and output file write location. Change these to reflect your own file structure
-results_dir=$local_path"results/dba-experiment-10-init-1-fold/"
-out_dir=$local_path"results/dba-experiment-10-init-1-fold/output/"
+results_dir=$local_path"results/kshapes-experiment/"
+out_dir=$local_path"results/kshapes-experiment/output/"
 
 # The python script we are running
-script_file_path=$local_path"code/aeon/aeon/clustering/experiment/dba_experiment.py"
+script_file_path=$local_path"code/aeon/aeon/clustering/experiment/kshape_experiment.py"
 
 # Environment name, change accordingly, for set up, see https://hackmd.io/ds5IEK3oQAquD4c6AP2xzQ
 # Separate environments for GPU (Python 3.8) and CPU (Python 3.10) are recommended
@@ -53,11 +53,8 @@ generate_test_files="true"
 
 # See set_clusterer for aliases
 count=0
-clusterer="kmeans-dba-ten-init"
+clusterer="kshapes-ten-init"
 while read dataset; do
-#  squared dtw ddtw wdtw wddtw lcss erp edr msm twe
-  for distance in msm dtw twe
-  do
     for init in random
     do
 
@@ -112,7 +109,7 @@ source activate $env_name
 
 # Input args to the default clustering_experiments are in main method of
 # https://github.com/time-series-machine-learning/tsml-eval/blob/main/tsml_eval/experiments/clustering_experiments.py
-python -u ${script_file_path} ${data_dir} ${results_dir} ${dataset} \$((\$SLURM_ARRAY_TASK_ID - 1)) ${distance} ${init}"  > generatedFile.sub
+python -u ${script_file_path} ${data_dir} ${results_dir} ${dataset} \$((\$SLURM_ARRAY_TASK_ID - 1)) ${init}"  > generatedFile.sub
 
 echo ${count} ${clusterer}/${dataset}
 
@@ -123,7 +120,6 @@ else
 fi
 
 fi
-done
 done
 done < ${datasets}
 
