@@ -19,7 +19,8 @@ import numba
 from aeon.clustering.k_shapes import TimeSeriesKShapes
 from aeon.datasets import load_from_tsfile as load_ts
 
-from aeon.clustering.experiment.dba_experiment import get_distance_defaults, _results_present_full_path, run_clustering_experiment
+from aeon.clustering.experiment.dba_experiment import _results_present_full_path, run_clustering_experiment
+
 if __name__ == "__main__":
     """Example simple usage, with args input via script or hard coded for testing."""
     numba.set_num_threads(1)

@@ -46,7 +46,7 @@ script_file_path=$local_path"code/aeon/aeon/clustering/experiment/kshape_experim
 
 # Environment name, change accordingly, for set up, see https://hackmd.io/ds5IEK3oQAquD4c6AP2xzQ
 # Separate environments for GPU (Python 3.8) and CPU (Python 3.10) are recommended
-env_name="dba-experiment"
+env_name="kshapes-experiment"
 
 # generate a results file for the test data as well as train
 generate_test_files="true"
