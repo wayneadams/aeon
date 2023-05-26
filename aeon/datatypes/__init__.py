@@ -11,7 +11,7 @@ from aeon.datatypes._check import (
     scitype,
 )
 from aeon.datatypes._convert import convert, convert_to
-from aeon.datatypes._examples import get_examples
+# from aeon.datatypes._examples import get_examples
 from aeon.datatypes._registry import (
     ALL_TIME_SERIES_MTYPES,
     MTYPE_LIST_HIERARCHICAL,
@@ -37,7 +37,7 @@ __all__ = [
     "convert_to",
     "mtype",
     "get_cutoff",
-    "get_examples",
+    # "get_examples",
     "mtype_to_scitype",
     "MTYPE_REGISTER",
     "MTYPE_LIST_HIERARCHICAL",
