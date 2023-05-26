@@ -42,7 +42,7 @@ results_dir=$local_path"results/dba-experiment-10-init-1-fold/"
 out_dir=$local_path"results/dba-experiment-10-init-1-fold/output/"
 
 # The python script we are running
-script_file_path=$local_path"code/aeon/aeon/clustering/experiment/dba_experiment.py"
+script_file_path=$local_path"code/aeon/aeon/clustering/experiments/dba_experiment.py"
 
 # Environment name, change accordingly, for set up, see https://hackmd.io/ds5IEK3oQAquD4c6AP2xzQ
 # Separate environments for GPU (Python 3.8) and CPU (Python 3.10) are recommended
