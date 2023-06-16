@@ -74,3 +74,13 @@ def test_cost_matrix(dist):
         dist["distance"],
         dist["alignment_path"],
     )
+
+def test_count_number_warps():
+    from aeon.distances._alignment_paths import _count_number_warps
+    from aeon.distances import cost_matrix
+    x = create_test_distance_numpy(10, 100)
+    y = create_test_distance_numpy(10, 100, random_state=2)
+
+    cm = cost_matrix(x, y, metric="dtw")
+    warping_dict = _count_number_warps(cm)
+
