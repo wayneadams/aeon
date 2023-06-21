@@ -319,7 +319,9 @@ class TimeSeriesKMedoids(BaseClusterer):
         else:
             return None
 
-    def _alternate_fit(self, X) -> Tuple[np.ndarray, np.ndarray, float, int]:
+    def _alternate_fit(
+            self, X: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, float, int]:
         cluster_centre_indexes = self._init_algorithm(X)
         old_inertia = np.inf
         old_indexes = None
@@ -347,6 +349,12 @@ class TimeSeriesKMedoids(BaseClusterer):
         centres = X[cluster_centre_indexes]
 
         return labels, centres, inertia, i + 1
+
+    def _faster_pam_fit(
+            self, X: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, float, int]:
+
+        pass
 
     def _assign_clusters(
         self, X: np.ndarray, cluster_centre_indexes: np.ndarray
@@ -394,6 +402,8 @@ class TimeSeriesKMedoids(BaseClusterer):
             self._fit_method = self._alternate_fit
         elif self.method == "pam":
             self._fit_method = self._pam_fit
+        elif self.method == "faster_pam":
+            self._fit_method = self._faster_pam_fit
         else:
             raise ValueError(f"method {self.method} is not supported")
 

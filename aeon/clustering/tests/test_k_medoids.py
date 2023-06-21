@@ -175,3 +175,24 @@ def test_medoids_init():
     check_value_in_every_cluster(num_clusters, kmedoids_plus_plus_medoids_result)
     kmedoids_build_result = kmedoids._pam_build_center_initializer(X_train)
     check_value_in_every_cluster(num_clusters, kmedoids_build_result)
+
+def test_faster_pam():
+    X_train, y_train = load_gunpoint(split="train")
+    X_test, y_test = load_gunpoint(split="test")
+
+    num_points = 10
+
+    X_train = X_train[:num_points]
+    y_train = y_train[:num_points]
+    X_test = X_test[:num_points]
+    y_test = y_test[:num_points]
+
+    kmedoids = TimeSeriesKMedoids(
+        random_state=1,
+        n_init=2,
+        max_iter=5,
+        init_algorithm="first",
+        distance="euclidean",
+        method="faster_pam",
+    )
+    train_medoids_result = kmedoids.fit_predict(X_train)
