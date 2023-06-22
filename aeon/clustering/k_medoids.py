@@ -353,6 +353,20 @@ class TimeSeriesKMedoids(BaseClusterer):
     def _faster_pam_fit(
             self, X: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, float, int]:
+        old_inertia = np.inf
+        n_instances = X.shape[0]
+        medoids_idxs = self._init_algorithm(X)
+        not_medoid_idxs = np.arange(n_instances, dtype=np.int)
+        distance_matrix = self._compute_pairwise(X, not_medoid_idxs, not_medoid_idxs)
+        distance_closest_medoid, distance_second_closest_medoid = np.sort(
+            distance_matrix[medoids_idxs], axis=0
+        )[[0, 1]]
+        not_medoid_idxs = np.delete(np.arange(n_instances, dtype=np.int), medoids_idxs)
+
+        while True:
+            for val in not_medoid_idxs:
+
+        # cost = np.inf
 
         pass
 
