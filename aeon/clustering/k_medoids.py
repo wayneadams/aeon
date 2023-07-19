@@ -251,6 +251,56 @@ class TimeSeriesKMedoids(BaseClusterer):
         distance_matrix = self._compute_pairwise(X, indexes, indexes)
         return indexes[np.argmin(sum(distance_matrix))]
 
+    def _fasterpam_fit(self, X: np.ndarray):
+        old_inertia = np.inf
+        n_instances = X.shape[0]
+        medoids_idxs = self._init_algorithm(X)
+        not_medoid_idxs = np.delete(np.arange(n_instances, dtype=int), medoids_idxs)
+        distance_closest_medoid, distance_second_closest_medoid = self._compute_pairwise(
+            X, not_medoid_idxs, medoids_idxs)
+
+        for i in range(self.max_iter):
+            old_medoid_idxs = np.copy(medoids_idxs)
+            best_cost_change = self._compute_optimal_swaps(
+                X,
+                medoids_idxs,
+                not_medoid_idxs,
+                distance_closest_medoid,
+                distance_second_closest_medoid,
+            )
+
+            inertia = np.inf
+            if best_cost_change is not None and best_cost_change[2] < 0:
+                first, second, _ = best_cost_change
+                medoids_idxs[medoids_idxs == first] = second
+                distance_closest_medoid, distance_second_closest_medoid = self._compute_pairwise(
+                    X, medoids_idxs)
+
+                inertia = np.sum(distance_closest_medoid)
+
+            if np.all(old_medoid_idxs == medoids_idxs):
+                if self.verbose:
+                    print(f"Converged at iteration {i}: strict convergence.")
+                break
+            if np.abs(old_inertia - inertia) < self.tol:
+                if self.verbose:
+                    print(f"Converged at iteration {i}: inertia less than tol.")
+                break
+            old_inertia = inertia
+            if i == self.max_iter - 1:
+                warnings.warn(
+                    "Maximum number of iteration reached before "
+                    "convergence. Consider increasing max_iter to "
+                    "improve the fit.",
+                    ConvergenceWarning,
+                )
+            if self.verbose is True:
+                print(f"Iteration {i}, inertia {inertia}.")
+
+        labels, inertia = self._assign_clusters(X, medoids_idxs)
+        centres = X[medoids_idxs]
+
+        return labels, centres, inertia, i + 1
     def _pam_fit(self, X: np.ndarray):
         old_inertia = np.inf
         n_instances = X.shape[0]
@@ -456,6 +506,8 @@ class TimeSeriesKMedoids(BaseClusterer):
             self._fit_method = self._alternate_fit
         elif self.method == "pam":
             self._fit_method = self._pam_fit
+        elif self.method == "faster_pam":
+            self._fit_method = self._fasterpam_fit
         else:
             raise ValueError(f"method {self.method} is not supported")
 

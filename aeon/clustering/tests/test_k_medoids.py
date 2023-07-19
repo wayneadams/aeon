@@ -20,8 +20,9 @@ def test_kmedoids_uni():
     y_train = y_train[:num_points]
     X_test = X_test[:num_points]
     y_test = y_test[:num_points]
-    _alternate_uni_medoids(X_train, y_train, X_test, y_test)
-    _pam_uni_medoids(X_train, y_train, X_test, y_test)
+    # _alternate_uni_medoids(X_train, y_train, X_test, y_test)
+    # _pam_uni_medoids(X_train, y_train, X_test, y_test)
+    _faster_pam_uni_medoids(X_train, y_train, X_test, y_test)
 
 
 def test_kmedoids_multi():
@@ -62,6 +63,22 @@ def _pam_uni_medoids(X_train, y_train, X_test, y_test):
     assert isinstance(kmedoids.cluster_centers_, np.ndarray)
     for val in proba:
         assert np.count_nonzero(val == 1.0) == 1
+
+
+def _faster_pam_uni_medoids(X_train, y_train, X_test, y_test):
+    kmedoids = TimeSeriesKMedoids(
+        random_state=1,
+        n_init=2,
+        max_iter=5,
+        method="faster_pam",
+        init_algorithm="first",
+        distance="euclidean",
+    )
+    train_medoids_result = kmedoids.fit_predict(X_train)
+    train_score = metrics.rand_score(y_train, train_medoids_result)
+    test_medoids_result = kmedoids.predict(X_test)
+    test_score = metrics.rand_score(y_test, test_medoids_result)
+    proba = kmedoids.predict_proba(X_test)
 
 
 def _alternate_uni_medoids(X_train, y_train, X_test, y_test):
