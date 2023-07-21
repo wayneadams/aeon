@@ -265,8 +265,10 @@ class TimeSeriesKMedoids(BaseClusterer):
         n_instances = X.shape[0]
         medoids_idxs = self._init_algorithm(X)
         not_medoid_idxs = np.delete(np.arange(n_instances, dtype=int), medoids_idxs)
-        distance_closest_medoid, distance_second_closest_medoid = self._compute_pairwise(
-            X, not_medoid_idxs, medoids_idxs)
+        (
+            distance_closest_medoid,
+            distance_second_closest_medoid,
+        ) = self._compute_pairwise(X, not_medoid_idxs, medoids_idxs)
 
         for i in range(self.max_iter):
             old_medoid_idxs = np.copy(medoids_idxs)
@@ -282,8 +284,10 @@ class TimeSeriesKMedoids(BaseClusterer):
             if best_cost_change is not None and best_cost_change[2] < 0:
                 first, second, _ = best_cost_change
                 medoids_idxs[medoids_idxs == first] = second
-                distance_closest_medoid, distance_second_closest_medoid = self._compute_pairwise(
-                    X, medoids_idxs)
+                (
+                    distance_closest_medoid,
+                    distance_second_closest_medoid,
+                ) = self._compute_pairwise(X, medoids_idxs)
 
                 inertia = np.sum(distance_closest_medoid)
 
@@ -310,6 +314,7 @@ class TimeSeriesKMedoids(BaseClusterer):
         centres = X[medoids_idxs]
 
         return labels, centres, inertia, i + 1
+
     def _pam_fit(self, X: np.ndarray):
         old_inertia = np.inf
         n_instances = X.shape[0]
