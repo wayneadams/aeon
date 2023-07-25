@@ -68,11 +68,10 @@ def _pam_uni_medoids(X_train, y_train, X_test, y_test):
 def _faster_pam_uni_medoids(X_train, y_train, X_test, y_test):
     kmedoids = TimeSeriesKMedoids(
         random_state=1,
-        n_init=2,
-        max_iter=5,
         method="faster_pam",
         init_algorithm="first",
         distance="euclidean",
+        n_clusters=3
     )
     train_medoids_result = kmedoids.fit_predict(X_train)
     train_score = metrics.rand_score(y_train, train_medoids_result)

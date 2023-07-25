@@ -142,17 +142,17 @@ class TimeSeriesKMedoids(BaseClusterer):
     }
 
     def __init__(
-        self,
-        n_clusters: int = 8,
-        init_algorithm: Union[str, Callable] = "random",
-        distance: Union[str, Callable] = "msm",
-        method: str = "pam",
-        n_init: int = 10,
-        max_iter: int = 300,
-        tol: float = 1e-6,
-        verbose: bool = False,
-        random_state: Union[int, RandomState] = None,
-        distance_params: dict = None,
+            self,
+            n_clusters: int = 8,
+            init_algorithm: Union[str, Callable] = "random",
+            distance: Union[str, Callable] = "msm",
+            method: str = "pam",
+            n_init: int = 10,
+            max_iter: int = 300,
+            tol: float = 1e-6,
+            verbose: bool = False,
+            random_state: Union[int, RandomState] = None,
+            distance_params: dict = None,
     ):
         self.init_algorithm = init_algorithm
         self.distance = distance
@@ -220,7 +220,7 @@ class TimeSeriesKMedoids(BaseClusterer):
         return pairwise_matrix.argmin(axis=1)
 
     def _compute_new_cluster_centers(
-        self, X: np.ndarray, assignment_indexes: np.ndarray
+            self, X: np.ndarray, assignment_indexes: np.ndarray
     ) -> np.ndarray:
         new_center_indexes = []
         for i in range(self.n_clusters):
@@ -243,7 +243,7 @@ class TimeSeriesKMedoids(BaseClusterer):
         return dist
 
     def _compute_pairwise(
-        self, X: np.ndarray, first_indexes: np.ndarray, second_indexes: np.ndarray
+            self, X: np.ndarray, first_indexes: np.ndarray, second_indexes: np.ndarray
     ):
         x_size = len(first_indexes)
         y_size = len(second_indexes)
@@ -260,67 +260,147 @@ class TimeSeriesKMedoids(BaseClusterer):
         distance_matrix = self._compute_pairwise(X, indexes, indexes)
         return indexes[np.argmin(sum(distance_matrix))]
 
+    def _compute_closest_medoid(
+            self, X: np.ndarray, medoids_idxs: np.ndarray, indexes: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        distance_matrix = self._compute_pairwise(X, medoids_idxs, indexes)
+        sorted_vals = np.sort(distance_matrix, axis=0)
+        sorted_args = np.argsort(distance_matrix, axis=0)
+        return (
+            sorted_vals[0],
+            sorted_vals[1],
+            # # distance_matrix[sorted_args[0]],
+            # distance_matrix[sorted_args[1]],
+            sorted_args[0],
+            sorted_args[1],
+        )
+
     def _fasterpam_fit(self, X: np.ndarray):
-        old_inertia = np.inf
         n_instances = X.shape[0]
-        medoids_idxs = self._init_algorithm(X)
-        not_medoid_idxs = np.delete(np.arange(n_instances, dtype=int), medoids_idxs)
-        (
-            distance_closest_medoid,
-            distance_second_closest_medoid,
-        ) = self._compute_pairwise(X, not_medoid_idxs, medoids_idxs)
+        medoids_idxs = np.array([1, 3, 5])
+        indexes = np.arange(n_instances, dtype=int)
+
+        distance_closest_medoid, distance_second_closest_medoid, closest_assignment, second_closest_assignment = \
+            self._compute_closest_medoid(X, medoids_idxs, indexes)
+        loss = np.sum(distance_closest_medoid)
+
+        removal_loss = self._compute_fasterpam_remove_loss(
+            X, distance_closest_medoid, closest_assignment, distance_second_closest_medoid
+        )
+
+        last_swap = n_instances
+        n_swaps = 0
 
         for i in range(self.max_iter):
-            old_medoid_idxs = np.copy(medoids_idxs)
-            best_cost_change = self._compute_optimal_swaps(
-                X,
-                medoids_idxs,
-                not_medoid_idxs,
-                distance_closest_medoid,
-                distance_second_closest_medoid,
-            )
-
-            inertia = np.inf
-            if best_cost_change is not None and best_cost_change[2] < 0:
-                first, second, _ = best_cost_change
-                medoids_idxs[medoids_idxs == first] = second
-                (
+            swap_before = n_swaps
+            for j in range(n_instances):
+                if j == last_swap:
+                    break
+                if j in medoids_idxs:
+                    continue
+                change, min_idx = self._compute_fastpam_optimal_swaps(
+                    X,
+                    removal_loss,
                     distance_closest_medoid,
                     distance_second_closest_medoid,
-                ) = self._compute_pairwise(X, medoids_idxs)
-
-                inertia = np.sum(distance_closest_medoid)
-
-            if np.all(old_medoid_idxs == medoids_idxs):
-                if self.verbose:
-                    print(f"Converged at iteration {i}: strict convergence.")
-                break
-            if np.abs(old_inertia - inertia) < self.tol:
-                if self.verbose:
-                    print(f"Converged at iteration {i}: inertia less than tol.")
-                break
-            old_inertia = inertia
-            if i == self.max_iter - 1:
-                warnings.warn(
-                    "Maximum number of iteration reached before "
-                    "convergence. Consider increasing max_iter to "
-                    "improve the fit.",
-                    ConvergenceWarning,
+                    closest_assignment,
+                    j
                 )
-            if self.verbose is True:
-                print(f"Iteration {i}, inertia {inertia}.")
+                if change >= 0:
+                    continue
 
-        labels, inertia = self._assign_clusters(X, medoids_idxs)
-        centres = X[medoids_idxs]
+                n_swaps += 1
+                last_swap = j
+                medoids_idxs[min_idx] = j
+                for k in range(n_instances):
+                    if k == j:
+                        if closest_assignment[k] != min_idx:
+                            distance_second_closest_medoid[k] = distance_closest_medoid[k]
+                            second_closest_assignment[k] = closest_assignment[k]
+                        distance_closest_medoid[k] = 0
+                        closest_assignment[k] = min_idx
+                    djo = self._compute_distance(X, j, k)
 
-        return labels, centres, inertia, i + 1
+                    if closest_assignment[k] == min_idx:
+                        if djo < distance_second_closest_medoid[k]:
+                            distance_closest_medoid[k] = djo
+                            closest_assignment[k] = min_idx
+                        else:
+                            distance_closest_medoid[k] = distance_second_closest_medoid[k]
+                            closest_assignment[k] = second_closest_assignment[k]
+
+                            _, distance_second_closest_medoid, _, second_closest_assignment = \
+                                self._compute_closest_medoid(X, medoids_idxs, indexes)
+                            # curr_dist = self._compute_pairwise(X, np.array([k]), medoids_idxs)[0]
+                            # distance_second_closest_medoid[k] = np.sort(curr_dist, axis=0)[1]
+                            # second_closest_assignment[k] = np.argsort(curr_dist, axis=0)[1]
+                    else:
+                        if djo < distance_closest_medoid[k]:
+                            distance_second_closest_medoid[k] = distance_closest_medoid[k]
+                            second_closest_assignment[k] = closest_assignment[k]
+                            distance_closest_medoid[k] = djo
+                            closest_assignment[k] = min_idx
+                        elif djo < distance_second_closest_medoid[k]:
+                            distance_second_closest_medoid[k] = djo
+                            second_closest_assignment[k] = min_idx
+                        elif second_closest_assignment[k] == min_idx:
+                            _, distance_second_closest_medoid, _, second_closest_assignment = \
+                                self._compute_closest_medoid(X, medoids_idxs, indexes)
+                            # curr_dist = self._compute_pairwise(X, np.array([k]), medoids_idxs)[0]
+                            # distance_second_closest_medoid[k] = np.sort(curr_dist, axis=0)[1]
+                            # second_closest_assignment[k] = np.argsort(curr_dist, axis=0)[1]
+                new_loss = np.sum(distance_closest_medoid)
+
+                if new_loss >= loss:
+                    break
+                loss = new_loss
+                removal_loss = self._compute_fasterpam_remove_loss(
+                    X, distance_closest_medoid, closest_assignment, distance_second_closest_medoid
+                )
+            if n_swaps == swap_before:
+                break
+        return closest_assignment
+
+    def _compute_fasterpam_remove_loss(
+            self,
+            X: np.ndarray,
+            distance_closest_medoid: np.ndarray,
+            closest_medoid_assignment: np.ndarray,
+            distance_second_closest_medoid: np.ndarray,
+    ) -> np.ndarray:
+        removal_loss = np.zeros(self.n_clusters, dtype=float)
+        for i in range(len(X)):
+            removal_loss[closest_medoid_assignment[i]] += distance_second_closest_medoid[i] - distance_closest_medoid[i]
+        return removal_loss
+
+    def _compute_fastpam_optimal_swaps(
+            self,
+            X: np.ndarray,
+            removal_loss: np.ndarray,
+            distance_closest_medoid: np.ndarray,
+            distance_second_closest_medoid: np.ndarray,
+            closest_medoid_assignment: np.ndarray,
+            curr_medoids_idx: int,
+    ) -> Tuple[float, int]:
+        ploss = removal_loss
+        acc = 0
+        for i in range(len(X)):
+            djo = self._compute_distance(X, i, curr_medoids_idx)
+
+            if djo < distance_closest_medoid[i]:
+                acc += djo - distance_closest_medoid[i]
+                ploss[closest_medoid_assignment[i]] += distance_closest_medoid[i] - distance_second_closest_medoid[i]
+            elif djo < distance_second_closest_medoid[i]:
+                ploss[closest_medoid_assignment[i]] += djo - distance_second_closest_medoid[i]
+        min_idx = np.argmin(ploss)
+        return ploss[min_idx] + acc, min_idx
 
     def _pam_fit(self, X: np.ndarray):
         old_inertia = np.inf
         n_instances = X.shape[0]
         medoids_idxs = self._init_algorithm(X)
-        not_medoid_idxs = np.arange(n_instances, dtype=int)
-        distance_matrix = self._compute_pairwise(X, not_medoid_idxs, not_medoid_idxs)
+        indexes = np.arange(n_instances, dtype=int)
+        distance_matrix = self._compute_pairwise(X, indexes, indexes)
         distance_closest_medoid, distance_second_closest_medoid = np.sort(
             distance_matrix[medoids_idxs], axis=0
         )[[0, 1]]
@@ -377,12 +457,12 @@ class TimeSeriesKMedoids(BaseClusterer):
         return labels, centers, inertia, i + 1
 
     def _compute_optimal_swaps(
-        self,
-        distance_matrix: np.ndarray,
-        medoids_idxs: np.ndarray,
-        not_medoid_idxs: np.ndarray,
-        distance_closest_medoid: np.ndarray,
-        distance_second_closest_medoid: np.ndarray,
+            self,
+            distance_matrix: np.ndarray,
+            medoids_idxs: np.ndarray,
+            not_medoid_idxs: np.ndarray,
+            distance_closest_medoid: np.ndarray,
+            distance_second_closest_medoid: np.ndarray,
     ):
         best_cost_change = (1, 1, 0.0)
         sample_size = len(distance_matrix)
@@ -400,39 +480,39 @@ class TimeSeriesKMedoids(BaseClusterer):
                 for j in range(not_medoid_shape):
                     id_j = not_medoid_idxs[j]
                     cluster_i_bool = (
-                        distance_matrix[id_i, id_j] == distance_closest_medoid[id_j]
+                            distance_matrix[id_i, id_j] == distance_closest_medoid[id_j]
                     )
                     not_cluster_i_bool = (
-                        distance_matrix[id_i, id_j] != distance_closest_medoid[id_j]
+                            distance_matrix[id_i, id_j] != distance_closest_medoid[id_j]
                     )
                     second_best_medoid = (
-                        distance_matrix[id_j, id_j]
-                        < distance_second_closest_medoid[id_j]
+                            distance_matrix[id_j, id_j]
+                            < distance_second_closest_medoid[id_j]
                     )
                     not_second_best_medoid = (
-                        distance_matrix[id_j, id_j]
-                        >= distance_second_closest_medoid[id_j]
+                            distance_matrix[id_j, id_j]
+                            >= distance_second_closest_medoid[id_j]
                     )
 
                     if cluster_i_bool and second_best_medoid:
                         cost_change += (
-                            distance_matrix[id_j, id_j] - distance_closest_medoid[id_j]
+                                distance_matrix[id_j, id_j] - distance_closest_medoid[id_j]
                         )
                     elif cluster_i_bool and not_second_best_medoid:
                         cost_change += (
-                            distance_second_closest_medoid[id_j]
-                            - distance_closest_medoid[id_j]
+                                distance_second_closest_medoid[id_j]
+                                - distance_closest_medoid[id_j]
                         )
                     elif not_cluster_i_bool and (
-                        distance_matrix[id_j, id_j] < distance_closest_medoid[id_j]
+                            distance_matrix[id_j, id_j] < distance_closest_medoid[id_j]
                     ):
                         cost_change += (
-                            distance_matrix[id_j, id_j] - distance_closest_medoid[id_j]
+                                distance_matrix[id_j, id_j] - distance_closest_medoid[id_j]
                         )
 
                 # same for i
                 second_best_medoid = (
-                    distance_matrix[id_j, id_i] < distance_second_closest_medoid[id_i]
+                        distance_matrix[id_j, id_i] < distance_second_closest_medoid[id_i]
                 )
                 if second_best_medoid:
                     cost_change += distance_matrix[id_i, id_j]
@@ -476,7 +556,7 @@ class TimeSeriesKMedoids(BaseClusterer):
         return labels, centers, inertia, i + 1
 
     def _assign_clusters(
-        self, X: np.ndarray, cluster_center_indexes: np.ndarray
+            self, X: np.ndarray, cluster_center_indexes: np.ndarray
     ) -> Tuple[np.ndarray, float]:
         X_indexes = np.arange(X.shape[0], dtype=int)
         pairwise_matrix = self._compute_pairwise(X, X_indexes, cluster_center_indexes)
@@ -541,9 +621,9 @@ class TimeSeriesKMedoids(BaseClusterer):
         return np.array(list(range(self.n_clusters)))
 
     def _kmedoids_plus_plus_center_initializer(
-        self,
-        X: np.ndarray,
-        n_local_trials: int = None,
+            self,
+            X: np.ndarray,
+            n_local_trials: int = None,
     ):
         centers_indexes = np.empty(self.n_clusters, dtype=int)
         n_samples, n_timestamps, n_features = X.shape
@@ -556,7 +636,7 @@ class TimeSeriesKMedoids(BaseClusterer):
         centers_indexes[0] = center_id
 
         closest_dist_sq = (
-            self._compute_pairwise(X, np.array([center_id]), all_x_indexes) ** 2
+                self._compute_pairwise(X, np.array([center_id]), all_x_indexes) ** 2
         )
         current_pot = closest_dist_sq.sum()
 
@@ -566,7 +646,7 @@ class TimeSeriesKMedoids(BaseClusterer):
             np.clip(candidate_ids, None, closest_dist_sq.size - 1, out=candidate_ids)
 
             distance_to_candidates = (
-                self._compute_pairwise(X, candidate_ids, all_x_indexes) ** 2
+                    self._compute_pairwise(X, candidate_ids, all_x_indexes) ** 2
             )
 
             np.minimum(
@@ -584,8 +664,8 @@ class TimeSeriesKMedoids(BaseClusterer):
         return centers_indexes
 
     def _pam_build_center_initializer(
-        self,
-        X: np.ndarray,
+            self,
+            X: np.ndarray,
     ):
         n_instances = X.shape[0]
         X_index = np.arange(n_instances, dtype=int)
