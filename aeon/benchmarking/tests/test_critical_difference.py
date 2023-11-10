@@ -6,11 +6,11 @@ import pytest
 from scipy.stats import rankdata
 
 from aeon.benchmarking._critical_difference import (
+    _build_cliques,
     _check_friedman,
-    build_cliques,
     nemenyi_cliques,
     plot_critical_difference,
-    wilcoxon_holm_cliques,
+    wilcoxon_cliques,
 )
 from aeon.benchmarking.results_loaders import get_estimator_results_as_array
 from aeon.datasets.tsc_data_lists import univariate_equal_length
@@ -62,7 +62,7 @@ def test_build_cliques():
         ]
     )
 
-    cliques = build_cliques(cliques)
+    cliques = _build_cliques(cliques)
 
     cliques_correct = np.array(
         [
@@ -82,7 +82,7 @@ def test_build_cliques():
         ]
     )
 
-    cliques = build_cliques(cliques)
+    cliques = _build_cliques(cliques)
 
     cliques_correct = np.array(
         [
@@ -105,7 +105,7 @@ def test_build_cliques():
         ]
     )
 
-    cliques = build_cliques(cliques)
+    cliques = _build_cliques(cliques)
 
     cliques_correct = np.array(
         [
@@ -127,7 +127,7 @@ def test_build_cliques():
         ]
     )
 
-    cliques = build_cliques(cliques)
+    cliques = _build_cliques(cliques)
 
     cliques_correct = np.array(
         [
@@ -150,7 +150,7 @@ def test_build_cliques():
         ]
     )
 
-    cliques = build_cliques(cliques)
+    cliques = _build_cliques(cliques)
 
     cliques_correct = np.ndarray([])
     assert np.all(cliques == cliques_correct)
@@ -203,15 +203,15 @@ def test_wilcoxon_holm_cliques():
     avranks = ranked_data.mean(axis=0)
     avranks = np.array([s for s, _ in sorted(zip(avranks, cls))])
 
-    cliques = wilcoxon_holm_cliques(res, cls, avranks, 0.1)
+    cliques = wilcoxon_cliques(res, cls, avranks, 0.1)
 
     assert np.all(cliques == [False, False, True, True])
 
-    cliques = wilcoxon_holm_cliques(res, cls, avranks, 0.05)
+    cliques = wilcoxon_cliques(res, cls, avranks, 0.05)
 
     assert np.all(cliques == [False, True, True, True])
 
-    cliques = wilcoxon_holm_cliques(res, cls, avranks, 0.01)
+    cliques = wilcoxon_cliques(res, cls, avranks, 0.01)
     assert np.all(cliques == [False, True, True, True])
 
 

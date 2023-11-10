@@ -3,7 +3,6 @@
 __author__ = ["SveaMeyer13", "dguijo"]
 
 import math
-import operator
 
 import numpy as np
 from scipy.stats import distributions, find_repeats, rankdata, wilcoxon
@@ -75,95 +74,104 @@ def nemenyi_cliques(n_estimators, n_datasets, avranks, alpha):
     cliques[cliques < 0] = np.inf
     cliques = cliques < cd
 
-    cliques = build_cliques(cliques)
+    cliques = _build_cliques(cliques)
 
     return cliques
 
 
-def wilcoxon_holm_cliques(results, labels, avranks, alpha):
-    """Find cliques using Wilcoxon and post hoc Holm test."""
-    # get number of strategies:
+def wilcoxon_cliques(results, labels, avranks, adjusted_alpha=0.1):
+    """Find cliques using Wilcoxon and post hoc Holm test.
+
+    Computes groups of estimators (cliques) within which there is no significant
+    difference. The algorithm assumes that the estimators (named in labels) are
+    sorted by average rank, so that labels[0] is the "best" estimator in terms of
+    lowest average rank.
+
+    This algorithm first forms a clique for each estimator in turn, with the first
+    element set as control, then once a clique is found for each estimator,
+    cliques that are either a singleton or completely contained within another
+    clique are removed.
+
+    Suppose we have four estimators, A, B, C and D sorted by average rank. Starting
+    from A, we test the null hypothesis that average ranks are equal against the
+    alternative hypothesis that the average rank of A is less than that of B. If we
+    reject the null hypothesis then we stop, and A is not in a clique. If we cannot
+    reject the null, we test A vs C, continuing until we reject the null or we have
+    tested all estimators.
+
+    Suppose we find B is significantly worse that A, but that on the next iteration we
+    find no difference between B and C, nor any difference between B and D. We have
+    formed one clique, [B, C, D]. On the third iteration, we also find not difference
+    between C and D and thus form a second clique, [C, D]. We have found two cliques,
+    but [C,D] is containedin [B, C, D] and is thus redundant. In this case we would
+    return a single clique, [ B, C, D].
+
+    All tests are performed with one sided Wilcoxon sign rank test, using alpha
+    passed as an argument that may have been adjusted for multiple tests.
+
+    Parameters
+    ----------
+        results : np.ndarray
+            Scores of shape ``(n_datasets, n_estimators)``, sorted so that the lowest
+            rank estimator is in position 0.
+        labels : list of str
+            List with names of the estimators.
+            results :
+        avranks : np.ndarray
+            Sorted ranks of estimators.
+        adjusted_alpha : float, default = 0.1
+             Alpha level for one-sided Wilcoxon sign rank test, possibly adjusted for
+             multiple testing with holm or bonferroni adjustment.
+
+    Example
+    -------
+    """
     n_estimators = results.shape[1]
 
     # init array that contains the p-values calculated by the Wilcoxon signed rank test
-    p_values = []
-    # loop through the algorithms to compare pairwise
+    p_values = np.ones(shape=(n_estimators, n_estimators))
+    cliques = []
     for i in range(n_estimators - 1):
-        # get the name of classifier one
-        classifier_1 = labels[i]
-        # get the performance of classifier one
-        perf_1 = np.array(results[:, i])
-
+        clique = np.zero(n_estimators, dtype=bool)
+        clique[i] = 1
         for j in range(i + 1, n_estimators):
-            # get the name of the second classifier
-            classifier_2 = labels[j]
-            # get the performance of classifier two
-            perf_2 = np.array(results[:, j])
-            # calculate the p_value
-            p_value = wilcoxon(perf_1, perf_2, zero_method="wilcox")[1]
-            # append to the list
-            p_values.append((classifier_1, classifier_2, p_value, False))
-
-    # get the number of hypothesis
-    n_hypothesis = len(p_values)
-
-    # sort the list in ascending manner of p-value
-    p_values.sort(key=operator.itemgetter(2))
-
-    # correct alpha with holm
-    new_alpha = float(alpha / (n_estimators - 1))
-
-    ordered_labels = [i for _, i in sorted(zip(avranks, labels))]
-
-    same = np.eye(len(ordered_labels), dtype=bool)
-
-    # loop through the hypothesis
-    for i in range(n_hypothesis):
-        # test if significant after holm's correction of alpha
-        if p_values[i][2] <= new_alpha:
-            p_values[i] = (p_values[i][0], p_values[i][1], p_values[i][2], True)
-        else:
-            idx_0 = np.where(np.array(ordered_labels) == p_values[i][0])[0][0]
-            idx_1 = np.where(np.array(ordered_labels) == p_values[i][1])[0][0]
-            same[idx_0][idx_1] = True
-            same[idx_1][idx_0] = True
-
-    cliques = build_cliques(same)
-
+            p_values[i][j] = wilcoxon(
+                results[i], results[j], zero_method="wilcox", alternative="less"
+            )[1]
+            if p_values[i][j] < adjusted_alpha:
+                clique[j] = 1
+            else:  # Can stop because the rest are not in the clique
+                break
+    # Remove redundant cliques
+    cliques = _build_cliques(cliques)
     return cliques
 
 
-def build_cliques(same):
-    """Build cliques."""
-    n_estimators = same.shape[1]
+def _build_cliques(cliques):
+    """Build cliques.
 
+    Removes cliques with either a single element or if they are fully contained by
+    another clique. It is assumed there is a clique for es
+    """
+    n_estimators = cliques.shape[1]
+    new_cliques = []
     for i in range(n_estimators):
-        if np.sum(same[i, :]) > 1:
-            true_values_i = np.where(same[i, :] == 1)[0]
-            first_true_i = true_values_i[0]
-            last_true_i = true_values_i[-1]
-            for j in range(i + 1, n_estimators):
-                if np.sum(same[j, :]) >= 1:
-                    true_values_j = np.where(same[j, :] == 1)[0]
-                    first_true_j = true_values_j[0]
-                    last_true_j = true_values_j[-1]
-                    # if j is contained in i
-                    if first_true_i <= first_true_j and last_true_i >= last_true_j:
-                        if len(true_values_i) >= len(true_values_j):
-                            same[j, :] = 0
-                        else:
-                            same[i, :] = 0
-                    # if i is contained in j
-                    elif first_true_i >= first_true_j and last_true_i <= last_true_j:
-                        if len(true_values_i) >= len(true_values_j):
-                            same[j, :] = 0
-                        else:
-                            same[i, :] = 0
-
-    n = np.sum(same, 1)
-    cliques = same[n > 1, :]
-
-    return cliques
+        clique_size = np.sum(cliques[i])
+        clique_end = clique_size + i - 1  # End index of i^th clique
+        if clique_size > 1:  # ignore singletons
+            # check if it is smaller than any previous cliques containing estimator i
+            add = True
+            for j in range(i):
+                end = np.sum(cliques[j]) - j - 1  # end index of j^th clique
+                if end >= i:  # check if estimator i is in clique j
+                    if (
+                        end >= clique_end
+                    ):  # If clique j is fully inside cliquee i dont add
+                        add = False
+                        break
+                if add:
+                    new_cliques.append(cliques[i])  # add if not subsumed
+    return new_cliques
 
 
 def plot_critical_difference(
@@ -285,7 +293,7 @@ def plot_critical_difference(
             if clique_method == "nemenyi":
                 cliques = nemenyi_cliques(n_estimators, n_datasets, avranks, alpha)
             elif clique_method == "holm":
-                cliques = wilcoxon_holm_cliques(
+                cliques = wilcoxon_cliques(
                     scores, labels, ranked_data.mean(axis=0), alpha
                 )
             else:
