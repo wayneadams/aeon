@@ -233,7 +233,13 @@ class RandomShapeletTransform(BaseCollectionTransformer):
         if self._max_shapelets < self.n_classes_:
             self._max_shapelets = self.n_classes_
         if self.max_shapelet_length is None:
-            self._max_shapelet_length = self.min_series_length_
+            if self.min_series_length_ < 20:
+                self._max_shapelet_length = self.min_series_length_
+            elif self.min_series_length_ < 40:
+                self._max_shapelet_length = self.min_series_length_ / 2
+            else:
+                self._max_shapelet_length = self.min_series_length_ / 4
+        print("STC BRANCH max length = ", self._max_shapelet_length)  # noqa
 
         time_limit = self.time_limit_in_minutes * 60
         start_time = time.time()
