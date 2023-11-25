@@ -217,8 +217,8 @@ class ShapeletTransformClassifier(BaseClassifier):
             batch_size=self.batch_size,
             random_state=self.random_state,
         )
+        print("Running with ", self._transformer.max_shapelets, "shapelets")  # noqa
         self._scaler = StandardScaler(with_mean=False)
-
         self._estimator = _clone_estimator(
             RotationForestClassifier() if self.estimator is None else self.estimator,
             self.random_state,
@@ -241,6 +241,7 @@ class ShapeletTransformClassifier(BaseClassifier):
             self.transformed_data_ = X_t
 
         self._estimator.fit(X_t, y)
+        print("Internal size check size with ", self.transformer._max_shapelets)  # noqa
 
         return self
 
