@@ -8,7 +8,6 @@ __author__ = ["TonyBagnall", "MatthewMiddlehurst"]
 __all__ = ["ShapeletTransformClassifier"]
 
 import numpy as np
-from sklearn.linear_model import RidgeClassifierCV
 from sklearn.model_selection import cross_val_predict
 from sklearn.preprocessing import StandardScaler
 
@@ -140,7 +139,7 @@ class ShapeletTransformClassifier(BaseClassifier):
     def __init__(
         self,
         n_shapelet_samples=10000,
-        max_shapelets=None,
+        max_shapelets=1000,
         max_shapelet_length=None,
         estimator=None,
         transform_limit_in_minutes=0,
@@ -219,17 +218,11 @@ class ShapeletTransformClassifier(BaseClassifier):
             random_state=self.random_state,
         )
         self._scaler = StandardScaler(with_mean=False)
+
         self._estimator = _clone_estimator(
-            RidgeClassifierCV(alphas=np.logspace(-3, 3, 10))
-            if self.estimator is None
-            else self.estimator,
+            RotationForestClassifier() if self.estimator is None else self.estimator,
             self.random_state,
         )
-        #
-        # self._estimator = _clone_estimator(
-        #     RotationForestClassifier() if self.estimator is None else self.estimator,
-        #     self.random_state,
-        # )
 
         if isinstance(self._estimator, RotationForestClassifier):
             self._estimator.save_transformed_data = self.save_transformed_data
