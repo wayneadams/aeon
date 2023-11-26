@@ -234,7 +234,6 @@ class RandomShapeletTransform(BaseCollectionTransformer):
             self._max_shapelets = self.n_classes_
         if self.max_shapelet_length is None:
             self._max_shapelet_length = self.min_series_length_
-        print("STC BRANCH A linear classifier ", self._max_shapelet_length)  # noqa
 
         time_limit = self.time_limit_in_minutes * 60
         start_time = time.time()

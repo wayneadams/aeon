@@ -217,7 +217,8 @@ class ShapeletTransformClassifier(BaseClassifier):
             batch_size=self.batch_size,
             random_state=self.random_state,
         )
-        print("Running with ", self._transformer.max_shapelets, "shapelets")  # noqa
+        print("Keeping  ", self._transformer.max_shapelets, "shapelets")  # noqa
+        print("Sampling ", self._transformer.n_shapelet_samples, "shapelets")  # noqa
         self._scaler = StandardScaler(with_mean=False)
         self._estimator = _clone_estimator(
             RotationForestClassifier() if self.estimator is None else self.estimator,
