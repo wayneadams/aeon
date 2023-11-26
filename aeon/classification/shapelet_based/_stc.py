@@ -242,7 +242,6 @@ class ShapeletTransformClassifier(BaseClassifier):
             self.transformed_data_ = X_t
 
         self._estimator.fit(X_t, y)
-        print("Internal size check size with ", self.transformer._max_shapelets)  # noqa
 
         return self
 
