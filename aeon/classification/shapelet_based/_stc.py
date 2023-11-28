@@ -205,7 +205,6 @@ class ShapeletTransformClassifier(BaseClassifier):
             self._transform_limit_in_minutes = (third * 2) / 5 * 4
         elif self.transform_limit_in_minutes > 0:
             self._transform_limit_in_minutes = self.transform_limit_in_minutes
-
         self._transformer = RandomShapeletTransform(
             n_shapelet_samples=self.n_shapelet_samples,
             max_shapelets=self.max_shapelets,
@@ -221,6 +220,9 @@ class ShapeletTransformClassifier(BaseClassifier):
             RotationForestClassifier() if self.estimator is None else self.estimator,
             self.random_state,
         )
+        print(" Shapelets sampled  = ", self.n_shapelet_samples)  # noqa
+        print(" Shapelets selected  = ", self.max_shapelets)  # noqa
+        print(" Classifier  = ", self._estimator.__name__)  # noqa
 
         if isinstance(self._estimator, RotationForestClassifier):
             self._estimator.save_transformed_data = self.save_transformed_data
