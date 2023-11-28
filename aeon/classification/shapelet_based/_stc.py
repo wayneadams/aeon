@@ -141,7 +141,7 @@ class ShapeletTransformClassifier(BaseClassifier):
     def __init__(
         self,
         n_shapelet_samples=10000,
-        max_shapelets=1000,
+        max_shapelets=10000,
         max_shapelet_length=None,
         estimator=None,
         transform_limit_in_minutes=0,
