@@ -1,4 +1,4 @@
-"""Fully Connected Neural Network (FCN) (minus the final output layer)."""
+"""Fully Convolutional Network (FCN) (minus the final output layer)."""
 
 __author__ = ["James-Large", "AurumnPegasus", "hadifawaz1999"]
 
@@ -77,7 +77,7 @@ class FCNNetwork(BaseDeepNetwork):
         Parameters
         ----------
         input_shape : tuple
-          shape = (series_length (m), n_dimensions (d)), the shape of the data fed
+          shape = (series_length (m), n_channels (d)), the shape of the data fed
           into the input layer.
 
         Returns

@@ -1,4 +1,4 @@
-"""Fully Connected Neural Network (CNN) for classification."""
+"""Fully Convolutional Network (FCN) for classification."""
 
 __author__ = ["James-Large", "AurumnPegasus", "hadifawaz1999"]
 __all__ = ["FCNClassifier"]
@@ -16,7 +16,7 @@ from aeon.utils.validation._dependencies import _check_dl_dependencies
 
 
 class FCNClassifier(BaseDeepClassifier):
-    """Fully Connected Neural Network (FCN).
+    """Fully Convolutional Network (FCN).
 
     Adapted from the implementation used in [1]_.
 
@@ -216,7 +216,7 @@ class FCNClassifier(BaseDeepClassifier):
 
         Parameters
         ----------
-        X : np.ndarray of shape = (n_instances (n), n_dimensions (d), series_length (m))
+        X : np.ndarray of shape = (n_instances (n), n_channels (d), series_length (m))
             The training input samples.
         y : np.ndarray of shape n
             The training data class labels.

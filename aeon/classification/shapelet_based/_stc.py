@@ -8,7 +8,10 @@ __author__ = ["TonyBagnall", "MatthewMiddlehurst"]
 __all__ = ["ShapeletTransformClassifier"]
 
 import numpy as np
+from sklearn.linear_model import RidgeClassifierCV
 from sklearn.model_selection import cross_val_predict
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 from aeon.base._base import _clone_estimator
 from aeon.classification.base import BaseClassifier
@@ -138,7 +141,7 @@ class ShapeletTransformClassifier(BaseClassifier):
     def __init__(
         self,
         n_shapelet_samples=10000,
-        max_shapelets=None,
+        max_shapelets=1000,
         max_shapelet_length=None,
         estimator=None,
         transform_limit_in_minutes=0,
@@ -216,29 +219,45 @@ class ShapeletTransformClassifier(BaseClassifier):
             batch_size=self.batch_size,
             random_state=self.random_state,
         )
-
+        print("Keeping  ", self._transformer.max_shapelets, "shapelets")  # noqa
+        print("Sampling ", self._transformer.n_shapelet_samples, "shapelets")  # noqa
+        print("CLASSSIFER = RidgeCV ")  # noqa
+        self._scaler = StandardScaler(with_mean=False)
         self._estimator = _clone_estimator(
-            RotationForestClassifier() if self.estimator is None else self.estimator,
+            RidgeClassifierCV(alphas=np.logspace(-3, 3, 10))
+            if self.estimator is None
+            else self.estimator,
             self.random_state,
         )
+        self.pipeline_ = make_pipeline(
+            self._transformer,
+            self._scaler,
+            self._estimator,
+        )
+        self.pipeline_.fit(X, y)
 
-        if isinstance(self._estimator, RotationForestClassifier):
-            self._estimator.save_transformed_data = self.save_transformed_data
+        # self._estimator = _clone_estimator(
+        #     RotationForestClassifier() if self.estimator is None else self.estimator,
+        #     self.random_state,
+        # )
 
-        m = getattr(self._estimator, "n_jobs", None)
-        if m is not None:
-            self._estimator.n_jobs = self._n_jobs
-
-        m = getattr(self._estimator, "time_limit_in_minutes", None)
-        if m is not None and self.time_limit_in_minutes > 0:
-            self._estimator.time_limit_in_minutes = self._classifier_limit_in_minutes
-
-        X_t = self._transformer.fit_transform(X, y)
-
-        if self.save_transformed_data:
-            self.transformed_data_ = X_t
-
-        self._estimator.fit(X_t, y)
+        # if isinstance(self._estimator, RotationForestClassifier):
+        #     self._estimator.save_transformed_data = self.save_transformed_data
+        #
+        # m = getattr(self._estimator, "n_jobs", None)
+        # if m is not None:
+        #     self._estimator.n_jobs = self._n_jobs
+        #
+        # m = getattr(self._estimator, "time_limit_in_minutes", None)
+        # if m is not None and self.time_limit_in_minutes > 0:
+        #     self._estimator.time_limit_in_minutes = self._classifier_limit_in_minutes
+        #
+        # X_t = self._transformer.fit_transform(X, y)
+        #
+        # if self.save_transformed_data:
+        #     self.transformed_data_ = X_t
+        #
+        # self._estimator.fit(X_t, y)
 
         return self
 
@@ -247,7 +266,7 @@ class ShapeletTransformClassifier(BaseClassifier):
 
         Parameters
         ----------
-        X : 3D np.array of shape = [n_instances, n_dimensions, series_length]
+        X : 3D np.array of shape = [n_instances, n_channels, series_length]
             The data to make predictions for.
 
         Returns
@@ -255,16 +274,19 @@ class ShapeletTransformClassifier(BaseClassifier):
         y : array-like, shape = [n_instances]
             Predicted class labels.
         """
-        X_t = self._transformer.transform(X)
-
-        return self._estimator.predict(X_t)
+        return self.pipeline_.predict(X)
+        #
+        #
+        # X_t = self._transformer.transform(X)
+        #
+        # return self._estimator.predict(X_t)
 
     def _predict_proba(self, X) -> np.ndarray:
         """Predicts labels probabilities for sequences in X.
 
         Parameters
         ----------
-        X : 3D np.array of shape = [n_instances, n_dimensions, series_length]
+        X : 3D np.array of shape = [n_instances, n_channels, series_length]
             The data to make predict probabilities for.
 
         Returns
@@ -272,17 +294,27 @@ class ShapeletTransformClassifier(BaseClassifier):
         y : array-like, shape = [n_instances, n_classes_]
             Predicted probabilities using the ordering in classes_.
         """
-        X_t = self._transformer.transform(X)
-
         m = getattr(self._estimator, "predict_proba", None)
         if callable(m):
-            return self._estimator.predict_proba(X_t)
+            return self.pipeline_.predict_proba(X)
         else:
             dists = np.zeros((X.shape[0], self.n_classes_))
-            preds = self._estimator.predict(X_t)
+            preds = self.pipeline_.predict(X)
             for i in range(0, X.shape[0]):
                 dists[i, np.where(self.classes_ == preds[i])] = 1
             return dists
+        #
+        # X_t = self._transformer.transform(X)
+        #
+        # m = getattr(self._estimator, "predict_proba", None)
+        # if callable(m):
+        #     return self._estimator.predict_proba(X_t)
+        # else:
+        #     dists = np.zeros((X.shape[0], self.n_classes_))
+        #     preds = self._estimator.predict(X_t)
+        #     for i in range(0, X.shape[0]):
+        #         dists[i, np.where(self.classes_ == preds[i])] = 1
+        #     return dists
 
     def _get_train_probs(self, X, y) -> np.ndarray:
         self.check_is_fitted()

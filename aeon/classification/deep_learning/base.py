@@ -45,7 +45,7 @@ class BaseDeepClassifier(BaseClassifier, ABC):
     """
 
     _tags = {
-        "X_inner_mtype": "numpy3D",
+        "X_inner_type": "numpy3D",
         "capability:multivariate": True,
         "algorithm_type": "deeplearning",
         "non-deterministic": True,
@@ -111,7 +111,7 @@ class BaseDeepClassifier(BaseClassifier, ABC):
 
         Parameters
         ----------
-        X : an np.ndarray of shape = (n_instances, n_dimensions, series_length)
+        X : an np.ndarray of shape = (n_instances, n_channels, series_length)
             The training input samples. input_checks : boolean
             Whether to check the X parameter
 
