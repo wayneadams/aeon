@@ -222,7 +222,7 @@ class ShapeletTransformClassifier(BaseClassifier):
         )
         print(" Shapelets sampled  = ", self.n_shapelet_samples)  # noqa
         print(" Shapelets selected  = ", self.max_shapelets)  # noqa
-        print(" Classifier  = ", self._estimator.__name__)  # noqa
+        print(" Classifier  = ", self._estimator)  # noqa
 
         if isinstance(self._estimator, RotationForestClassifier):
             self._estimator.save_transformed_data = self.save_transformed_data
