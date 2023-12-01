@@ -147,7 +147,7 @@ class ShapeletTransformClassifier(BaseClassifier):
         contract_max_n_shapelet_samples=np.inf,
         save_transformed_data=False,
         n_jobs=1,
-        batch_size=100,
+        batch_size=500,
         random_state=None,
     ):
         self.n_shapelet_samples = n_shapelet_samples
