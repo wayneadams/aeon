@@ -8,6 +8,7 @@ __author__ = ["TonyBagnall", "MatthewMiddlehurst"]
 __all__ = ["ShapeletTransformClassifier"]
 
 import numpy as np
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.model_selection import cross_val_predict
 
 from aeon.base._base import _clone_estimator
@@ -220,9 +221,6 @@ class ShapeletTransformClassifier(BaseClassifier):
             RotationForestClassifier() if self.estimator is None else self.estimator,
             self.random_state,
         )
-        print(" Shapelets sampled  = ", self.n_shapelet_samples)  # noqa
-        print(" Shapelets selected  = ", self.max_shapelets)  # noqa
-        print(" Classifier  = ", self._estimator)  # noqa
 
         if isinstance(self._estimator, RotationForestClassifier):
             self._estimator.save_transformed_data = self.save_transformed_data
@@ -239,7 +237,12 @@ class ShapeletTransformClassifier(BaseClassifier):
 
         if self.save_transformed_data:
             self.transformed_data_ = X_t
-
+        self._filter = VarianceThreshold()
+        print(" Shapelets sampled  = ", self.n_shapelet_samples)  # noqa
+        print(" Shapelets selected  = ", self.max_shapelets)  # noqa
+        print(" Filter  = ", self._filter)  # noqa
+        print(" Classifier  = ", self._estimator)  # noqa
+        X_t = self._filter.fit_transform(X_t)
         self._estimator.fit(X_t, y)
 
         return self
@@ -258,6 +261,7 @@ class ShapeletTransformClassifier(BaseClassifier):
             Predicted class labels.
         """
         X_t = self._transformer.transform(X)
+        X_t = self._filter.transform(X_t)
 
         return self._estimator.predict(X_t)
 
@@ -275,6 +279,7 @@ class ShapeletTransformClassifier(BaseClassifier):
             Predicted probabilities using the ordering in classes_.
         """
         X_t = self._transformer.transform(X)
+        X_t = self._filter.transform(X_t)
 
         m = getattr(self._estimator, "predict_proba", None)
         if callable(m):
