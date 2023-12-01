@@ -234,10 +234,9 @@ class ShapeletTransformClassifier(BaseClassifier):
             self._estimator.time_limit_in_minutes = self._classifier_limit_in_minutes
 
         X_t = self._transformer.fit_transform(X, y)
-
+        self._filter = VarianceThreshold()
         if self.save_transformed_data:
             self.transformed_data_ = X_t
-        self._filter = VarianceThreshold()
         print(" Shapelets sampled  = ", self.n_shapelet_samples)  # noqa
         print(" Shapelets selected  = ", self.max_shapelets)  # noqa
         print(" Filter  = ", self._filter)  # noqa
