@@ -200,7 +200,7 @@ def z_normalise_series(X: np.ndarray) -> np.ndarray:
     >>> X_norm = z_normalise_series(X)
     """
     s = stats.std(X)
-    if s > 0:
+    if s > 1e-7:
         arr = (X - stats.mean(X)) / s
     else:
         arr = X - stats.mean(X)

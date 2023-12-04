@@ -479,7 +479,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
         orderline = []
         this_cls_traversed = 0
         other_cls_traversed = 0
-
+        dist_sum = 0
         for i, series in enumerate(X):
             if i != inst_idx:
                 distance = _online_shapelet_distance(
@@ -496,23 +496,27 @@ class RandomShapeletTransform(BaseCollectionTransformer):
                 other_cls_traversed += 1
 
             orderline.append((distance, cls))
-            orderline.sort()
+            dist_sum += distance
+            if dist_sum > 0:
+                orderline.sort()
 
-            if worst_quality > 0:
-                quality = _calc_early_binary_ig(
-                    orderline,
-                    this_cls_traversed,
-                    other_cls_traversed,
-                    this_cls_count - this_cls_traversed,
-                    other_cls_count - other_cls_traversed,
-                    worst_quality,
-                )
+                if worst_quality > 0:
+                    quality = _calc_early_binary_ig(
+                        orderline,
+                        this_cls_traversed,
+                        other_cls_traversed,
+                        this_cls_count - this_cls_traversed,
+                        other_cls_count - other_cls_traversed,
+                        worst_quality,
+                    )
 
-                if quality <= worst_quality:
-                    return -1
+                    if quality <= worst_quality:
+                        return -1
 
-        quality = _calc_binary_ig(orderline, this_cls_count, other_cls_count)
-
+        if dist_sum > 0:
+            quality = _calc_binary_ig(orderline, this_cls_count, other_cls_count)
+        else:
+            quality = 0
         return round(quality, 12)
 
     @staticmethod
