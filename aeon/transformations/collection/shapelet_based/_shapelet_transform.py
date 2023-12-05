@@ -499,7 +499,6 @@ class RandomShapeletTransform(BaseCollectionTransformer):
             dist_sum += distance
             if dist_sum > 0:
                 orderline.sort()
-
                 if worst_quality > 0:
                     quality = _calc_early_binary_ig(
                         orderline,
@@ -515,7 +514,7 @@ class RandomShapeletTransform(BaseCollectionTransformer):
 
         if dist_sum > 0:
             quality = _calc_binary_ig(orderline, this_cls_count, other_cls_count)
-        else:
+        else:  # exact shapelet is in all instances
             quality = 0
         return round(quality, 12)
 

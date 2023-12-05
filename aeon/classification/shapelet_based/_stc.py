@@ -138,7 +138,7 @@ class ShapeletTransformClassifier(BaseClassifier):
     def __init__(
         self,
         n_shapelet_samples=10000,
-        max_shapelets=1000,
+        max_shapelets=None,
         max_shapelet_length=None,
         estimator=None,
         transform_limit_in_minutes=0,
@@ -235,8 +235,8 @@ class ShapeletTransformClassifier(BaseClassifier):
         X_t = self._transformer.fit_transform(X, y)
         if self.save_transformed_data:
             self.transformed_data_ = X_t
-        print(" Shapelets sampled  = ", self.n_shapelet_samples)  # noqa
-        print(" Shapelets selected  = ", self.max_shapelets)  # noqa
+        print(" Shapelets sampled  = ", self._transformer._n_shapelet_samples)  # noqa
+        print(" Shapelets selected  = ", self._transformer._max_shapelets)  # noqa
         print(" IGNORE zero variance internally")  # noqa
         print(" Classifier  = ", self._estimator)  # noqa
         self._estimator.fit(X_t, y)
