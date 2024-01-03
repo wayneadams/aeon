@@ -9,6 +9,8 @@ __all__ = [
 
 __author__ = ["dguijo"]
 
+import warnings
+
 import numpy as np
 
 from aeon.utils.validation._dependencies import _check_soft_dependencies
@@ -416,13 +418,16 @@ def plot_scatter(
         )[1]
         ttes = f"Paired t-test for equality of means, p-value={p_value_t:.3f}"
 
-        p_value_w = wilcoxon(
-            first,
-            second,
-            zero_method="wilcox",
-            alternative="less" if lower_better else "greater",
-        )[1]
-
+        try:
+            p_value_w = wilcoxon(
+                first,
+                second,
+                zero_method="wilcox",
+                alternative="less" if lower_better else "greater",
+            )[1]
+        except ValueError:
+            p_value_w = 1.0
+            warnings.warn("Wilcoxon test failed. All values are equal.", stacklevel=2)
         wil = f"Wilcoxon test for equality of medians, p-value={p_value_w:.3f}"
 
         plt.figtext(
