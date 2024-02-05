@@ -42,11 +42,12 @@ def _get_y(input_type, n_instances):
     reason="skip test if required soft dependency for ARIMA not available",
 )
 @pytest.mark.parametrize("input_type", COLLECTION_TYPES)
-def test_vectorization_series_to_panel(input_type):
-    """Test that forecaster vectorization works for Panel data.
+def test_broadcasting_series_to_panel(input_type):
+    """Test that forecaster broadcasting works for collections of series.
 
-    This test passes Panel data to the ARIMA forecaster which internally has an
-    implementation for Series only, so the BaseForecaster has to vectorize.
+    This test passes a collection of series to the ARIMA forecaster which
+    internally can only handle single series. The BaseForecaster has to
+    broadcast the forecaster across the time series instances.
     """
     n_instances = 10
     y = _get_y(input_type, n_instances)
@@ -55,7 +56,7 @@ def test_vectorization_series_to_panel(input_type):
     valid, _, metadata = check_is_mtype(y_pred, input_type, return_metadata=True)
 
     msg = (
-        f"vectorization of forecasters does not work for test example "
+        f"Broadcasting of forecasters does not work for test example "
         f"of type {input_type}, using the ARIMA forecaster"
     )
 
@@ -63,7 +64,7 @@ def test_vectorization_series_to_panel(input_type):
 
     y_pred_instances = metadata["n_instances"]
     msg = (
-        f"vectorization test produces wrong number of instances "
+        f"Broadcasting test produces wrong number of instances "
         f"expected {n_instances}, found {y_pred_instances}"
     )
 
@@ -71,14 +72,14 @@ def test_vectorization_series_to_panel(input_type):
 
     y_pred_equal_length = metadata["is_equal_length"]
     msg = (
-        "vectorization test produces non-equal length Panel forecast, should be "
+        "Broadcasting test produces non-equal length collection forecast, should be "
         "equal length, and length equal to the forecasting horizon [1, 2, 3]"
     )
     assert y_pred_equal_length, msg
 
     cutoff_expected = get_cutoff(y)
     msg = (
-        "estimator in vectorization test does not properly update cutoff, "
+        "estimator in broadcasting test does not properly update cutoff, "
         f"expected {cutoff_expected}, but found {f.cutoff}"
     )
     assert f.cutoff == cutoff_expected, msg
@@ -89,11 +90,12 @@ def test_vectorization_series_to_panel(input_type):
     reason="skip test if required soft dependency for ARIMA not available",
 )
 @pytest.mark.parametrize("input_type", HIER_TYPES)
-def test_vectorization_series_to_hier(input_type):
-    """Test that forecaster vectorization works for Hierarchical data.
+def test_broadcasting_series_to_hier(input_type):
+    """Test that forecaster broadcasting works for Hierarchical data.
 
-    This test passes Hierarchical data to the ARIMA forecaster which internally has an
-    implementation for Series only, so the BaseForecaster has to vectorize.
+    This test passes Hierarchical data to the ARIMA forecaster which internally can
+    only forecast a single series, so the BaseForecaster has to broadcast  the time
+    series instances.
     """
     hierarchy_levels = (2, 4)
     n_instances = reduce(mul, hierarchy_levels)
@@ -106,7 +108,7 @@ def test_vectorization_series_to_hier(input_type):
     valid, _, metadata = check_is_mtype(y_pred, input_type, return_metadata=True)
 
     msg = (
-        f"vectorization of forecasters does not work for test example "
+        f"broadcasting of forecasters does not work for test example "
         f"of mtype {input_type}, using the ARIMA forecaster"
     )
 
@@ -114,7 +116,7 @@ def test_vectorization_series_to_hier(input_type):
 
     y_pred_instances = metadata["n_instances"]
     msg = (
-        f"vectorization test produces wrong number of instances "
+        f"broadcasting test produces wrong number of instances "
         f"expected {n_instances}, found {y_pred_instances}"
     )
 
@@ -122,13 +124,13 @@ def test_vectorization_series_to_hier(input_type):
 
     y_pred_equal_length = metadata["is_equal_length"]
     msg = (
-        "vectorization test produces non-equal length Panel forecast, should be "
+        "broadcasting test produces non-equal length collection forecast, should be "
         "equal length, and length equal to the forecasting horizon [1, 2, 3]"
     )
     assert y_pred_equal_length, msg
 
     msg = (
-        "estimator in vectorization test does not properly update cutoff, "
+        "estimator in broadcasting test does not properly update cutoff, "
         f"expected {y}, but found {f.cutoff}"
     )
     assert f.cutoff == get_cutoff(y), msg
@@ -143,11 +145,12 @@ PROBA_DF_METHODS = ["predict_interval", "predict_quantiles", "predict_var"]
 )
 @pytest.mark.parametrize("method", PROBA_DF_METHODS)
 @pytest.mark.parametrize("input_type", COLLECTION_TYPES)
-def test_vectorization_series_to_panel_proba(method, input_type):
-    """Test that forecaster vectorization works for Panel data, predict_proba.
+def test_broadcasting_series_to_panel_proba(method, input_type):
+    """Test that forecaster broadcasting works for collection data and predict_proba.
 
-    This test passes Panel data to the ARIMA forecaster which internally has an
-    implementation for Series only, so the BaseForecaster has to vectorize.
+    This test passes a collection  of series to the ARIMA forecaster which
+    internally has an implementation for a single series only, so the BaseForecaster
+    has to broadcast the forecaster across the time series instances.
     """
     n_instances = 10
     y = _get_y(input_type, n_instances)
@@ -165,7 +168,7 @@ def test_vectorization_series_to_panel_proba(method, input_type):
     valid, _, _ = check_is_mtype(y_pred, expected_mtype, return_metadata=True)
 
     msg = (
-        f"vectorization of forecaster method {method} does not work for test example "
+        f"broadcasting of forecaster method {method} does not work for test example "
         f"of mtype {input_type}, using the ARIMA forecaster"
     )
 
@@ -178,11 +181,11 @@ def test_vectorization_series_to_panel_proba(method, input_type):
 )
 @pytest.mark.parametrize("method", PROBA_DF_METHODS)
 @pytest.mark.parametrize("input_type", HIER_TYPES)
-def test_vectorization_series_to_hier_proba(method, input_type):
-    """Test that forecaster vectorization works for Hierarchical data, predict_proba.
+def test_broadcasting_series_to_hier_proba(method, input_type):
+    """Test that forecaster broadcasting works for hierarchical data and predict_proba.
 
-    This test passes Hierarchical data to the ARIMA forecaster which internally has an
-    implementation for Series only, so the BaseForecaster has to vectorize.
+    This test passes hierarchical data to the ARIMA forecaster which internally has an
+    implementation for a single series only, so the BaseForecaster has to broadcast.
     """
     hierarchy_levels = (2, 4)
     y = _make_hierarchical(hierarchy_levels=hierarchy_levels, random_state=84)
@@ -201,7 +204,7 @@ def test_vectorization_series_to_hier_proba(method, input_type):
     valid, _, _ = check_is_mtype(y_pred, expected_mtype, return_metadata=True)
 
     msg = (
-        f"vectorization of forecaster method {method} does not work for test example "
+        f"broadcasting of forecaster method {method} does not work for test example "
         f"of mtype {input_type}, using the ARIMA forecaster"
     )
 
@@ -213,8 +216,8 @@ def test_vectorization_series_to_hier_proba(method, input_type):
     reason="skip test if required soft dependency for ARIMA not available",
 )
 @pytest.mark.parametrize("method", PROBA_DF_METHODS)
-def test_vectorization_preserves_row_index_names(method):
-    """Test that forecaster vectorization preserves row index names in forecast."""
+def test_broadcasting_preserves_row_index_names(method):
+    """Test that forecaster broadcasting preserves row index names in forecast."""
     hierarchy_levels = (2, 4)
     y = _make_hierarchical(hierarchy_levels=hierarchy_levels, random_state=84)
 
@@ -235,8 +238,8 @@ def test_vectorization_preserves_row_index_names(method):
 )
 @pytest.mark.parametrize("mtype", HIER_TYPES)
 @pytest.mark.parametrize("exogeneous", [True, False])
-def test_vectorization_multivariate(mtype, exogeneous):
-    """Test that forecaster vectorization preserves row index names in forecast."""
+def test_broadcasting_multivariate(mtype, exogeneous):
+    """Test that forecaster broadcasting preserves row index names in forecast."""
     hierarchy_levels = (2, 4)
     n_instances = reduce(mul, hierarchy_levels)
 
@@ -258,20 +261,20 @@ def test_vectorization_multivariate(mtype, exogeneous):
     valid, _, metadata = check_is_mtype(y_pred, mtype, return_metadata=True)
 
     msg = (
-        f"vectorization of forecasters does not work for test example "
+        f"broadcasting of forecasters does not work for test example "
         f"of mtype {mtype}, using the ARIMA forecaster"
     )
     assert valid, msg
 
     msg = (
-        "vectorization over variables produces wrong set of variables in predict, "
+        "broadcasting over variables produces wrong set of variables in predict, "
         f"expected {y_fit.columns}, found {y_pred.columns}"
     )
     assert set(y_fit.columns) == set(y_pred.columns), msg
 
     y_pred_instances = metadata["n_instances"]
     msg = (
-        f"vectorization test produces wrong number of instances "
+        f"broadcasting test produces wrong number of instances "
         f"expected {n_instances}, found {y_pred_instances}"
     )
 
@@ -279,7 +282,7 @@ def test_vectorization_multivariate(mtype, exogeneous):
 
     y_pred_equal_length = metadata["is_equal_length"]
     msg = (
-        "vectorization test produces non-equal length Panel forecast, should be "
+        "broadcasting test produces non-equal length collection forecast, should be "
         "equal length, and length equal to the forecasting horizon [1, 2, 3]"
     )
     assert y_pred_equal_length, msg
