@@ -61,7 +61,7 @@ class BOSSEnsemble(BaseClassifier):
         Sets the feature selections strategy to be usedfrom  {"chi2", "none",
         "random"}. Chi2 reduces the number of words significantly and is thus much
         faster (preferred). Random also reduces the number significantly. None
-        applies not feature selection and yields large bag of words, e.g. much memory
+        applies no feature selection and yields large bag of words, e.g. much memory
         may be needed.
     alphabet_size : default = 4
         Number of possible letters (values) for each word.
